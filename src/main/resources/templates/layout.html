@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <title layout:title-pattern="$CONTENT_TITLE - $LAYOUT_TITLE">Gestion de Tournois</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background-color: #f4f4f4; }
+        nav { background-color: #2c3e50; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        nav a { color: white; text-decoration: none; margin-right: 1.5rem; }
+        nav a:hover { text-decoration: underline; }
+        .container { max-width: 1000px; margin: 2rem auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #ecf0f1; }
+        .btn { display: inline-block; padding: 0.5rem 1rem; background-color: #2980b9; color: white; text-decoration: none; border-radius: 4px; border: none; cursor: pointer; }
+        .btn-danger { background-color: #c0392b; }
+        .error { color: #c0392b; background: #fdecea; padding: 1rem; border-radius: 4px; }
+        .success { color: #27ae60; background: #eafaf1; padding: 1rem; border-radius: 4px; }
+        input, select, textarea { width: 100%; padding: 0.5rem; margin: 0.4rem 0 1rem 0; box-sizing: border-box; }
+        label { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <nav>
+        <div>
+            <a href="/dashboard">Accueil</a>
+            <a href="/tournaments">Tournois</a>
+            <a href="/teams">Équipes</a>
+        </div>
+        <div>
+            <span sec:authorize="isAuthenticated()" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+                  th:text="${#authentication.name}"></span>
+            <form th:action="@{/logout}" method="post" style="display:inline; margin-left: 1rem;">
+                <button type="submit" class="btn btn-danger">Déconnexion</button>
+            </form>
+        </div>
+    </nav>
+    <div class="container" layout:fragment="content">
+        <!-- Le contenu spécifique de chaque page vient ici -->
+    </div>
+</body>
+</html>
