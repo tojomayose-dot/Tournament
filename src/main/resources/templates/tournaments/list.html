@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout}">
+<head>
+    <title>Liste des tournois</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <h1>Tournois</h1>
+
+    <p sec:authorize="hasAnyRole('ADMIN','MANAGER')">
+        <a href="/tournaments/new" class="btn">+ Nouveau tournoi</a>
+    </p>
+
+    <p th:if="${tournaments.isEmpty()}">Aucun tournoi enregistré pour le moment.</p>
+
+    <table th:unless="${tournaments.isEmpty()}">
+        <thead>
+        <tr>
+            <th>Nom</th>
+            <th>Sport</th>
+            <th>Type</th>
+            <th>Début</th>
+            <th>Fin</th>
+            <th>Lieu</th>
+            <th>Statut</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="t : ${tournaments}">
+            <td th:text="${t.name}">Nom</td>
+            <td th:text="${t.sport}">Sport</td>
+            <td th:text="${t.type}">Type</td>
+            <td th:text="${t.startDate}">Début</td>
+            <td th:text="${t.endDate}">Fin</td>
+            <td th:text="${t.location}">Lieu</td>
+            <td th:text="${t.status}">Statut</td>
+            <td>
+                <a th:href="@{/tournaments/{id}(id=${t.id})}" class="btn">Détails</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <p th:if="${totalPages > 1}" style="margin-top: 1rem;">
+        Page <span th:text="${currentPage + 1}">1</span> sur <span th:text="${totalPages}">1</span>
+        (<span th:text="${totalElements}">0</span> tournois au total)
+    </p>
+
+</div>
+</body>
+</html>

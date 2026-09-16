@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Détail du tournoi</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <h1 th:text="${tournament.name}">Nom du tournoi</h1>
+
+    <table>
+        <tr><th>Sport</th><td th:text="${tournament.sport}"></td></tr>
+        <tr><th>Description</th><td th:text="${tournament.description}"></td></tr>
+        <tr><th>Type</th><td th:text="${tournament.type}"></td></tr>
+        <tr><th>Statut</th><td th:text="${tournament.status}"></td></tr>
+        <tr><th>Date de début</th><td th:text="${tournament.startDate}"></td></tr>
+        <tr><th>Date de fin</th><td th:text="${tournament.endDate}"></td></tr>
+        <tr><th>Lieu</th><td th:text="${tournament.location}"></td></tr>
+        <tr><th>Nombre max d'équipes</th><td th:text="${tournament.maxTeams}"></td></tr>
+    </table>
+
+    <p style="margin-top: 1.5rem;">
+        <a href="/tournaments" class="btn">Retour à la liste</a>
+    </p>
+
+</div>
+</body>
+</html>
