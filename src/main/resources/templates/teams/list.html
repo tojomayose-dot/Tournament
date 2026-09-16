@@ -1,0 +1,50 @@
+ <!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout}">
+<head>
+    <title>Liste des équipes</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <h1>Équipes</h1>
+
+    <p sec:authorize="hasAnyRole('ADMIN','MANAGER')">
+        <a href="/teams/new" class="btn">+ Nouvelle équipe</a>
+    </p>
+
+    <p th:if="${teams.isEmpty()}">Aucune équipe enregistrée pour le moment.</p>
+
+    <table th:unless="${teams.isEmpty()}">
+        <thead>
+        <tr>
+            <th>Nom</th>
+            <th>Ville</th>
+            <th>Entraîneur</th>
+            <th>Statut</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="team : ${teams}">
+            <td th:text="${team.name}">Nom</td>
+            <td th:text="${team.city}">Ville</td>
+            <td th:text="${team.coachName}">Entraîneur</td>
+            <td th:text="${team.status}">Statut</td>
+            <td>
+                <a th:href="@{/teams/{id}(id=${team.id})}" class="btn">Détails</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <p th:if="${totalPages > 1}" style="margin-top: 1rem;">
+        Page <span th:text="${currentPage + 1}">1</span> sur <span th:text="${totalPages}">1</span>
+        (<span th:text="${totalElements}">0</span> équipes au total)
+    </p>
+
+</div>
+</body>
+</html>

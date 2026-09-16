@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Détail de l'équipe</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <h1 th:text="${team.name}">Nom de l'équipe</h1>
+
+    <table>
+        <tr><th>Ville</th><td th:text="${team.city}"></td></tr>
+        <tr><th>Entraîneur</th><td th:text="${team.coachName}"></td></tr>
+        <tr><th>Statut</th><td th:text="${team.status}"></td></tr>
+    </table>
+
+    <p style="margin-top: 1.5rem;">
+        <a href="/teams" class="btn">Retour à la liste</a>
+    </p>
+
+</div>
+</body>
+</html>
