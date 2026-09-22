@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       layout:decorate="~{layout}">
 <head>
     <title>Détail du tournoi</title>
@@ -10,16 +11,100 @@
 
     <h1 th:text="${tournament.name}">Nom du tournoi</h1>
 
+    <p th:if="${errorMessage}" class="error" th:text="${errorMessage}"></p>
+
     <table>
         <tr><th>Sport</th><td th:text="${tournament.sport}"></td></tr>
-        <tr><th>Description</th><td th:text="${tournament.description}"></td></tr>
         <tr><th>Type</th><td th:text="${tournament.type}"></td></tr>
         <tr><th>Statut</th><td th:text="${tournament.status}"></td></tr>
-        <tr><th>Date de début</th><td th:text="${tournament.startDate}"></td></tr>
-        <tr><th>Date de fin</th><td th:text="${tournament.endDate}"></td></tr>
+        <tr><th>Dates</th><td th:text="${tournament.startDate} + ' → ' + ${tournament.endDate}"></td></tr>
         <tr><th>Lieu</th><td th:text="${tournament.location}"></td></tr>
-        <tr><th>Nombre max d'équipes</th><td th:text="${tournament.maxTeams}"></td></tr>
+        <tr><th>Max équipes</th><td th:text="${tournament.maxTeams}"></td></tr>
     </table>
+
+    <hr>
+
+    <!-- ===== INSCRIPTION D'ÉQUIPES ===== -->
+    <h2>Inscrire une équipe</h2>
+    <form sec:authorize="hasAnyRole('ADMIN','MANAGER','OPERATOR')"
+          th:action="@{/tournaments/{id}/teams(id=${tournament.id})}" method="post">
+        <select name="teamId" required>
+            <option value="">-- Choisir une équipe --</option>
+            <option th:each="team : ${allTeams}" th:value="${team.id}" th:text="${team.name}"></option>
+        </select>
+        <button type="submit" class="btn">Inscrire</button>
+    </form>
+
+    <hr>
+
+    <!-- ===== GÉNÉRATION DES MATCHS ===== -->
+    <div sec:authorize="hasAnyRole('ADMIN','MANAGER')">
+        <h2>Matchs</h2>
+        <form th:unless="${hasMatches}"
+              th:action="@{/tournaments/{id}/generate-matches(id=${tournament.id})}" method="post">
+            <button type="submit" class="btn">Générer les matchs</button>
+        </form>
+    </div>
+
+    <p th:if="${hasMatches == false}">Aucun match généré pour le moment.</p>
+
+    <table th:if="${hasMatches}">
+        <thead>
+        <tr>
+            <th>Phase</th>
+            <th>Domicile</th>
+            <th>Score</th>
+            <th>Extérieur</th>
+            <th>Statut</th>
+            <th sec:authorize="hasAnyRole('ADMIN','MANAGER','OPERATOR')">Résultat</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="m : ${matches}">
+            <td th:text="${m.phase}"></td>
+            <td th:text="${m.homeTeamName}"></td>
+            <td th:text="${m.homeScore} + ' - ' + ${m.awayScore}"></td>
+            <td th:text="${m.awayTeamName}"></td>
+            <td th:text="${m.status}"></td>
+            <td sec:authorize="hasAnyRole('ADMIN','MANAGER','OPERATOR')">
+                <form th:if="${m.status.name() == 'PLANIFIE'}"
+                      th:action="@{/tournaments/{tid}/matches/{mid}/result(tid=${tournament.id},mid=${m.id})}"
+                      method="post" style="display:flex; gap:0.3rem;">
+                    <input type="number" name="homeScore" min="0" placeholder="Dom." style="width:60px;" required>
+                    <input type="number" name="awayScore" min="0" placeholder="Ext." style="width:60px;" required>
+                    <button type="submit" class="btn">OK</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <!-- ===== CLASSEMENT (championnat uniquement) ===== -->
+    <div th:if="${ranking != null}">
+        <hr>
+        <h2>Classement</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>Équipe</th><th>J</th><th>V</th><th>N</th><th>D</th>
+                <th>BP</th><th>BC</th><th>Diff</th><th>Pts</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="r : ${ranking}">
+                <td th:text="${r.teamName}"></td>
+                <td th:text="${r.played}"></td>
+                <td th:text="${r.won}"></td>
+                <td th:text="${r.drawn}"></td>
+                <td th:text="${r.lost}"></td>
+                <td th:text="${r.goalsFor}"></td>
+                <td th:text="${r.goalsAgainst}"></td>
+                <td th:text="${r.goalDifference}"></td>
+                <td th:text="${r.points}"><b></b></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
 
     <p style="margin-top: 1.5rem;">
         <a href="/tournaments" class="btn">Retour à la liste</a>

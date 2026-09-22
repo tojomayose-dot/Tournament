@@ -9,6 +9,7 @@ import com.example.tournament.service.TournamentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -75,5 +76,21 @@ public class TournamentServiceImpl implements TournamentService {
     public void deleteTournament(Long id) {
         Tournament existing = getTournamentById(id);
         tournamentRepository.delete(existing);
+    }
+
+    @Override
+    public Page<Tournament> searchTournaments(String sport, TournamentStatus status, Pageable pageable) {
+
+        Specification<Tournament> spec = (root, query, cb) -> cb.conjunction();
+
+        if (sport != null && !sport.isBlank()) {
+            spec = spec.and((root, query, cb) -> cb.equal(cb.lower(root.get("sport")), sport.toLowerCase()));
+        }
+
+        if (status != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), status));
+        }
+
+        return tournamentRepository.findAll(spec, pageable);
     }
 }

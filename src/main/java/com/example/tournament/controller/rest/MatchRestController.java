@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import com.example.tournament.dto.request.MatchResultRequest;
 import jakarta.validation.Valid;
 import com.example.tournament.dto.response.TeamRankingResponse;
+import com.example.tournament.dto.response.TournamentStatisticsResponse;
 
 import java.util.List;
 
@@ -59,5 +60,10 @@ public class MatchRestController {
 
         Match match = matchService.recordResult(matchId, request.getHomeScore(), request.getAwayScore());
         return ResponseEntity.ok(matchMapper.toResponse(match));
+    }
+
+    @GetMapping("/statistics")
+    public ResponseEntity<TournamentStatisticsResponse> getStatistics(@PathVariable Long tournamentId) {
+        return ResponseEntity.ok(matchService.getStatistics(tournamentId));
     }
 }

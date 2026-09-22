@@ -30,7 +30,7 @@ public class Match {
     private Team homeTeam;
 
     @ManyToOne
-    @JoinColumn(name = "away_team_id", nullable = false)
+    @JoinColumn(name = "away_team_id")
     private Team awayTeam;
 
     private LocalDate matchDate;

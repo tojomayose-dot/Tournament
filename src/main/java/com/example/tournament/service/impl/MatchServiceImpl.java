@@ -1,6 +1,7 @@
 package com.example.tournament.service.impl;
 
 import com.example.tournament.dto.response.TeamRankingResponse;
+import com.example.tournament.dto.response.TournamentStatisticsResponse;
 import com.example.tournament.entity.*;
 import com.example.tournament.exception.BusinessException;
 import com.example.tournament.exception.ResourceNotFoundException;
@@ -103,6 +104,19 @@ public class MatchServiceImpl implements MatchService {
             matches.add(match);
         }
 
+        // Équipes exemptées : matchs fictifs déjà gagnés, sans adversaire
+        for (Team byeTeam : firstRound.byeTeams()) {
+            Match byeMatch = new Match();
+            byeMatch.setTournament(tournament);
+            byeMatch.setHomeTeam(byeTeam);
+            byeMatch.setAwayTeam(null);
+            byeMatch.setPhase("Exemption");
+            byeMatch.setRoundNumber(1);
+            byeMatch.setStatus(MatchStatus.TERMINE);
+            byeMatch.setWinnerTeam(byeTeam);
+            matches.add(byeMatch);
+        }
+
         return matches;
     }
 
@@ -148,6 +162,10 @@ public class MatchServiceImpl implements MatchService {
 
         if (match.getTournament().getType() == TournamentType.ELIMINATION_DIRECTE) {
             tryGenerateNextKnockoutRound(match.getTournament(), match.getRoundNumber());
+        }
+
+        if (match.getAwayTeam() == null) {
+            throw new BusinessException("Ce match est une exemption automatique, aucun résultat à enregistrer.");
         }
 
         return savedMatch;
@@ -228,5 +246,31 @@ public class MatchServiceImpl implements MatchService {
                         .points(stats.points)
                         .build())
                 .toList();
+    }
+
+    @Override
+    public TournamentStatisticsResponse getStatistics(Long tournamentId) {
+
+        List<Match> matches = matchRepository.findByTournamentId(tournamentId);
+        int totalTeams = registrationRepository.findByTournamentId(tournamentId).size();
+
+        int totalMatches = matches.size();
+        long played = matches.stream().filter(m -> m.getStatus() == MatchStatus.TERMINE).count();
+        int totalGoals = matches.stream()
+                .filter(m -> m.getStatus() == MatchStatus.TERMINE)
+                .mapToInt(m -> (m.getHomeScore() != null ? m.getHomeScore() : 0)
+                        + (m.getAwayScore() != null ? m.getAwayScore() : 0))
+                .sum();
+
+        double average = played > 0 ? (double) totalGoals / played : 0.0;
+
+        return TournamentStatisticsResponse.builder()
+                .totalTeams(totalTeams)
+                .totalMatches(totalMatches)
+                .matchesPlayed((int) played)
+                .matchesRemaining(totalMatches - (int) played)
+                .totalGoals(totalGoals)
+                .averageGoalsPerMatch(Math.round(average * 100.0) / 100.0)
+                .build();
     }
 }

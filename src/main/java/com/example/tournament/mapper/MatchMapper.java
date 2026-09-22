@@ -11,7 +11,7 @@ public class MatchMapper {
         return MatchResponse.builder()
                 .id(match.getId())
                 .homeTeamName(match.getHomeTeam().getName())
-                .awayTeamName(match.getAwayTeam().getName())
+                .awayTeamName(match.getAwayTeam() != null ? match.getAwayTeam().getName() : "Exempté")
                 .matchDate(match.getMatchDate())
                 .matchTime(match.getMatchTime())
                 .venue(match.getVenue())

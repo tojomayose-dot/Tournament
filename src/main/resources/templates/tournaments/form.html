@@ -8,11 +8,11 @@
 <body>
 <div layout:fragment="content">
 
-    <h1>Créer un tournoi</h1>
-
+    <h1 th:text="${editId != null} ? 'Modifier le tournoi' : 'Créer un tournoi'">Créer un tournoi</h1>
+    
     <p th:if="${errorMessage}" class="error" th:text="${errorMessage}"></p>
 
-    <form th:action="@{/tournaments}" th:object="${tournamentRequest}" method="post">
+    <form th:action="${editId != null} ? @{/tournaments/{id}/update(id=${editId})} : @{/tournaments}"th:object="${tournamentRequest}" method="post">
 
         <label>Nom du tournoi</label>
         <input type="text" th:field="*{name}">

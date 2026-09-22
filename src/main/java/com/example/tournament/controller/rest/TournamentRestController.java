@@ -4,6 +4,7 @@ import com.example.tournament.dto.request.CreateTournamentRequest;
 import com.example.tournament.dto.request.UpdateTournamentRequest;
 import com.example.tournament.dto.response.TournamentResponse;
 import com.example.tournament.entity.Tournament;
+import com.example.tournament.entity.TournamentStatus;
 import com.example.tournament.mapper.TournamentMapper;
 import com.example.tournament.service.TournamentService;
 import jakarta.validation.Valid;
@@ -45,9 +46,12 @@ public class TournamentRestController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<TournamentResponse>> getAllTournaments(Pageable pageable) {
+    public ResponseEntity<Page<TournamentResponse>> getAllTournaments(
+            @RequestParam(required = false) String sport,
+            @RequestParam(required = false) TournamentStatus status,
+            Pageable pageable) {
 
-        Page<TournamentResponse> page = tournamentService.getAllTournaments(pageable)
+        Page<TournamentResponse> page = tournamentService.searchTournaments(sport, status, pageable)
                 .map(tournamentMapper::toResponse);
 
         return ResponseEntity.ok(page);

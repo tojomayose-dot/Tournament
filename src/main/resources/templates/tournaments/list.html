@@ -11,6 +11,22 @@
 
     <h1>Tournois</h1>
 
+    <form method="get" style="display:flex; gap:1rem; align-items:end; margin-bottom:1rem;">
+        <div>
+            <label>Sport</label>
+            <input type="text" name="sport" th:value="${selectedSport}">
+        </div>
+        <div>
+            <label>Statut</label>
+            <select name="status">
+                <option value="">-- Tous --</option>
+                <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}"
+                        th:selected="${s == selectedStatus}"></option>
+            </select>
+        </div>
+        <button type="submit" class="btn">Filtrer</button>
+    </form>
+
     <p sec:authorize="hasAnyRole('ADMIN','MANAGER')">
         <a href="/tournaments/new" class="btn">+ Nouveau tournoi</a>
     </p>
@@ -41,6 +57,13 @@
             <td th:text="${t.status}">Statut</td>
             <td>
                 <a th:href="@{/tournaments/{id}(id=${t.id})}" class="btn">Détails</a>
+                <a sec:authorize="hasAnyRole('ADMIN','MANAGER')"
+                th:href="@{/tournaments/{id}/edit(id=${t.id})}" class="btn">Modifier</a>
+                <form sec:authorize="hasAnyRole('ADMIN','MANAGER')"
+                    th:action="@{/tournaments/{id}/delete(id=${t.id})}" method="post" style="display:inline;"
+                    onsubmit="return confirm('Supprimer ce tournoi ?');">
+                    <button type="submit" class="btn btn-danger">Supprimer</button>
+                </form>
             </td>
         </tr>
         </tbody>
