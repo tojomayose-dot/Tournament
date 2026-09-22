@@ -1,5 +1,5 @@
- <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       layout:decorate="~{layout}">
@@ -7,52 +7,411 @@
     <title>Liste des équipes</title>
 </head>
 <body>
-<div layout:fragment="content">
+<div layout:fragment="content"
+     th:with="canManage=${#authorization.expression('hasAnyRole(''ADMIN'',''MANAGER'')')}">
 
-    <h1>Équipes</h1>
+    <!-- En-tête de la page -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">Équipes</h1>
+            <p class="mt-1 text-sm text-slate-500">
+                <span th:text="${totalElements}">0</span> équipe(s) sportive(s) enregistrée(s).
+            </p>
+        </div>
+        <div th:if="${canManage}">
+            <a th:href="@{/teams/new}"
+               class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
+                <i data-lucide="plus" class="w-5 h-5"></i>
+                Nouvelle équipe
+            </a>
+        </div>
+    </div>
 
-    <p th:if="${errorMessage}" class="error" th:text="${errorMessage}"></p>
+    <!-- Barre de recherche asynchrone (HTMX) -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-6">
+        <form th:action="@{/teams}" method="get"
+              hx-get="/teams"
+              hx-trigger="input changed delay:350ms from:find input"
+              hx-target="#team-container"
+              hx-select="#team-container"
+              hx-swap="outerHTML"
+              hx-indicator="#filter-indicator"
+              class="flex items-center gap-3">
 
-    <p sec:authorize="hasAnyRole('ADMIN','MANAGER')">
-        <a href="/teams/new" class="btn">+ Nouvelle équipe</a>
-    </p>
+            <!-- Recherche par nom ou ville -->
+            <div class="relative flex-1">
+                <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                <input type="text" name="search" th:value="${search}"
+                       placeholder="Rechercher une équipe par nom ou ville (ex: Paris, Dragons, Lions)..."
+                       class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200">
+            </div>
 
-    <p th:if="${teams.isEmpty()}">Aucune équipe enregistrée pour le moment.</p>
+            <!-- Bouton Effacer la recherche (si active) -->
+            <a th:if="${search != null and !search.isBlank()}" th:href="@{/teams}"
+               class="inline-flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all duration-200">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                Réinitialiser
+            </a>
 
-    <table th:unless="${teams.isEmpty()}">
-        <thead>
-        <tr>
-            <th>Nom</th>
-            <th>Ville</th>
-            <th>Entraîneur</th>
-            <th>Statut</th>
-            <th>Actions</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="team : ${teams}">
-            <td th:text="${team.name}">Nom</td>
-            <td th:text="${team.city}">Ville</td>
-            <td th:text="${team.coachName}">Entraîneur</td>
-            <td th:text="${team.status}">Statut</td>
-            <td>
-                <a th:href="@{/teams/{id}(id=${team.id})}" class="btn">Détails</a>
-                <a sec:authorize="hasAnyRole('ADMIN','MANAGER')"
-                th:href="@{/teams/{id}/edit(id=${team.id})}" class="btn">Modifier</a>
-                <form sec:authorize="hasAnyRole('ADMIN','MANAGER')"
-                    th:action="@{/teams/{id}/delete(id=${team.id})}" method="post" style="display:inline;"
-                    onsubmit="return confirm('Supprimer cette équipe ?');">
-                    <button type="submit" class="btn btn-danger">Supprimer</button>
-                </form>
-            </td>
-        </tr>
-        </tbody>
-    </table>
+            <!-- Indicateur de chargement visuel HTMX -->
+            <div id="filter-indicator" class="htmx-indicator flex items-center justify-center px-2 py-1">
+                <i data-lucide="loader-circle" class="w-5 h-5 text-indigo-600 animate-spin"></i>
+            </div>
+        </form>
+    </div>
 
-    <p th:if="${totalPages > 1}" style="margin-top: 1rem;">
-        Page <span th:text="${currentPage + 1}">1</span> sur <span th:text="${totalPages}">1</span>
-        (<span th:text="${totalElements}">0</span> équipes au total)
-    </p>
+    <!-- Conteneur principal des resultats (Cible du remplacement HTMX) -->
+    <div id="team-container">
+
+        <!-- ============================================== -->
+        <!-- 1. VUE DESKTOP (Tableau standard >= md)        -->
+        <!-- ============================================== -->
+        <div class="hidden md:block bg-white rounded-xl border border-slate-200 shadow-sm overflow-visible">
+            <table class="min-w-full divide-y divide-slate-200">
+                <thead class="bg-slate-50/80">
+                <tr>
+                    <th scope="col" class="py-3.5 px-6 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Équipe</th>
+                    <th scope="col" class="py-3.5 px-6 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Ville</th>
+                    <th scope="col" class="py-3.5 px-6 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Entraîneur</th>
+                    <th scope="col" class="py-3.5 px-6 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Effectif</th>
+                    <th scope="col" class="py-3.5 px-6 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Statut</th>
+                    <th scope="col" class="py-3.5 px-6 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Actions</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 bg-white">
+
+                <tr th:each="team : ${teams}"
+                    th:id="'team-row-' + ${team.id}"
+                    class="hover:bg-slate-50/80 transition-all duration-200 group">
+
+                    <!-- Colonne Équipe (Logo / Avatar + Nom) -->
+                    <td class="py-4 px-6">
+                        <a th:href="@{/teams/{id}(id=${team.id})}" class="flex items-center gap-3">
+                            <span th:if="${team.logo != null and !team.logo.isBlank()}"
+                                  class="w-10 h-10 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
+                                <img th:src="${team.logo}" th:alt="${team.name}" class="w-full h-full object-cover"
+                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <span style="display:none;" class="w-full h-full bg-indigo-50 text-indigo-600 items-center justify-center font-bold text-sm"
+                                      th:text="${#strings.substring(team.name,0,1).toUpperCase()}">T</span>
+                            </span>
+                            <span th:if="${team.logo == null or team.logo.isBlank()}"
+                                  class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 font-bold text-sm group-hover:bg-indigo-600 group-hover:text-white transition-all duration-200">
+                                <i data-lucide="shield" class="w-5 h-5"></i>
+                            </span>
+                            <div class="min-w-0">
+                                <span class="block text-sm font-semibold text-slate-900 group-hover:text-indigo-600 transition-all duration-200 truncate"
+                                      th:text="${team.name}">Nom</span>
+                                <span class="block text-xs text-slate-500 truncate"
+                                      th:text="${team.city != null and !team.city.isBlank()} ? ${team.city} : 'Non renseignée'">Ville</span>
+                            </div>
+                        </a>
+                    </td>
+
+                    <!-- Colonne Ville -->
+                    <td class="py-4 px-6 text-sm text-slate-600 whitespace-nowrap">
+                        <span class="inline-flex items-center gap-1.5" th:if="${team.city != null and !team.city.isBlank()}">
+                            <i data-lucide="map-pin" class="w-4 h-4 text-slate-400"></i>
+                            <span th:text="${team.city}">Ville</span>
+                        </span>
+                        <span th:if="${team.city == null or team.city.isBlank()}" class="text-slate-400">Non renseignée</span>
+                    </td>
+
+                    <!-- Colonne Entraîneur -->
+                    <td class="py-4 px-6 text-sm text-slate-600 whitespace-nowrap">
+                        <span class="inline-flex items-center gap-1.5" th:if="${team.coachName != null and !team.coachName.isBlank()}">
+                            <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
+                            <span th:text="${team.coachName}">Coach</span>
+                        </span>
+                        <span th:if="${team.coachName == null or team.coachName.isBlank()}" class="text-slate-400 italic">Non assigné</span>
+                    </td>
+
+                    <!-- Colonne Effectif -->
+                    <td class="py-4 px-6 whitespace-nowrap">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700">
+                            <i data-lucide="users" class="w-3.5 h-3.5 text-slate-500"></i>
+                            <span th:text="${team.players != null ? team.players.size() : 0} + ' joueur(s)'">0 joueur(s)</span>
+                        </span>
+                    </td>
+
+                    <!-- Colonne Statut -->
+                    <td class="py-4 px-6 whitespace-nowrap">
+                        <span th:if="${team.status != null and team.status.name() == 'ACTIVE'}"
+                              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                            Active
+                        </span>
+                        <span th:if="${team.status == null or team.status.name() != 'ACTIVE'}"
+                              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                            Inactive
+                        </span>
+                    </td>
+
+                    <!-- Colonne Actions rapides (Menu Alpine.js) -->
+                    <td class="py-4 px-6 text-right whitespace-nowrap">
+                        <div x-data="{ open: false }" class="relative inline-block text-left">
+                            <button @click="open = !open"
+                                    class="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200"
+                                    aria-label="Actions de l'équipe">
+                                <i data-lucide="more-horizontal" class="w-5 h-5"></i>
+                            </button>
+
+                            <div x-show="open" @click.away="open = false"
+                                 x-transition:enter="transition ease-out duration-150"
+                                 x-transition:enter-start="opacity-0 scale-95"
+                                 x-transition:enter-end="opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-100"
+                                 x-transition:leave-start="opacity-100 scale-100"
+                                 x-transition:leave-end="opacity-0 scale-95"
+                                 class="absolute right-0 z-20 mt-1 w-44 rounded-xl bg-white shadow-lg border border-slate-200 py-1 origin-top-right focus:outline-none"
+                                 style="display: none;">
+
+                                <a th:href="@{/teams/{id}(id=${team.id})}"
+                                   class="flex items-center gap-2.5 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-all duration-200">
+                                    <i data-lucide="eye" class="w-4 h-4 text-slate-400"></i>
+                                    <span>Voir le détail</span>
+                                </a>
+
+                                <a th:if="${canManage}"
+                                   th:href="@{/teams/{id}/edit(id=${team.id})}"
+                                   class="flex items-center gap-2.5 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-all duration-200">
+                                    <i data-lucide="pencil" class="w-4 h-4 text-slate-400"></i>
+                                    <span>Modifier</span>
+                                </a>
+
+                                <div th:if="${canManage}" class="border-t border-slate-100 my-1"></div>
+
+                                <button th:if="${canManage}"
+                                        type="button"
+                                        @click="open = false; $dispatch('open-delete', { id: [[${team.id}]], name: '[[${team.name}]]' })"
+                                        class="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-all duration-200">
+                                    <i data-lucide="trash-2" class="w-4 h-4 text-red-500"></i>
+                                    <span>Supprimer</span>
+                                </button>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- 2. VUE MOBILE (Cartes responsives < md)        -->
+        <!-- ============================================== -->
+        <div class="md:hidden grid grid-cols-1 gap-4">
+            <div th:each="team : ${teams}"
+                 th:id="'team-card-' + ${team.id}"
+                 class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4 hover:shadow-md transition-all duration-200">
+
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span th:if="${team.logo != null and !team.logo.isBlank()}"
+                              class="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
+                            <img th:src="${team.logo}" th:alt="${team.name}" class="w-full h-full object-cover">
+                        </span>
+                        <span th:if="${team.logo == null or team.logo.isBlank()}"
+                              class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                            <i data-lucide="shield" class="w-6 h-6"></i>
+                        </span>
+                        <div class="min-w-0">
+                            <a th:href="@{/teams/{id}(id=${team.id})}"
+                               class="font-bold text-base text-slate-900 hover:text-indigo-600 transition-all duration-200 block truncate"
+                               th:text="${team.name}">Nom de l'équipe</a>
+                            <span class="text-xs text-slate-500 block truncate"
+                                  th:text="${team.city != null and !team.city.isBlank()} ? ${team.city} : 'Ville non renseignée'">Ville</span>
+                        </div>
+                    </div>
+
+                    <!-- Statut badge -->
+                    <span th:if="${team.status != null and team.status.name() == 'ACTIVE'}"
+                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                        Active
+                    </span>
+                    <span th:if="${team.status == null or team.status.name() != 'ACTIVE'}"
+                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200 shrink-0">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                        Inactive
+                    </span>
+                </div>
+
+                <!-- Métadonnées de l'équipe -->
+                <div class="grid grid-cols-2 gap-2 text-xs text-slate-600 pt-2 border-t border-slate-100">
+                    <div class="flex items-center gap-1.5 truncate">
+                        <i data-lucide="user" class="w-3.5 h-3.5 text-slate-400 shrink-0"></i>
+                        <span th:text="${team.coachName != null and !team.coachName.isBlank()} ? ${team.coachName} : 'Coach : non assigné'" class="truncate">Coach</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 truncate">
+                        <i data-lucide="users" class="w-3.5 h-3.5 text-slate-400 shrink-0"></i>
+                        <span th:text="${team.players != null ? team.players.size() : 0} + ' joueur(s)'">0 joueur(s)</span>
+                    </div>
+                </div>
+
+                <!-- Boutons d'action mobile -->
+                <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
+                    <a th:href="@{/teams/{id}(id=${team.id})}"
+                       class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-all duration-200">
+                        <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                        <span>Détails</span>
+                    </a>
+                    <a th:if="${canManage}"
+                       th:href="@{/teams/{id}/edit(id=${team.id})}"
+                       class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-all duration-200">
+                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                        <span>Modifier</span>
+                    </a>
+                    <button th:if="${canManage}"
+                            type="button"
+                            @click="$dispatch('open-delete', { id: [[${team.id}]], name: '[[${team.name}]]' })"
+                            class="inline-flex items-center justify-center p-2 text-xs font-semibold rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-all duration-200"
+                            aria-label="Supprimer l'équipe">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- 3. ÉTAT VIDE (Aucun résultat trouvé)          -->
+        <!-- ============================================== -->
+        <div th:if="${teams.isEmpty()}"
+             class="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
+            <div class="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="users" class="w-8 h-8"></i>
+            </div>
+            <h3 class="text-base font-bold text-slate-900">Aucune équipe trouvée</h3>
+            <p class="mt-1 text-sm text-slate-500 max-w-sm mx-auto">
+                <span th:if="${search != null and !search.isBlank()}">Aucune équipe ne correspond à votre recherche "<strong th:text="${search}"></strong>".</span>
+                <span th:if="${search == null or search.isBlank()}">Commencez par enregistrer vos équipes sportives pour les inscrire aux compétitions.</span>
+            </p>
+            <div class="mt-6 flex items-center justify-center gap-3">
+                <a th:if="${search != null and !search.isBlank()}" th:href="@{/teams}"
+                   class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-all duration-200">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    <span>Effacer le filtre</span>
+                </a>
+                <a th:if="${canManage}" th:href="@{/teams/new}"
+                   class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm transition-all duration-200">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    <span>Créer une équipe</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- 4. PAGINATION                                 -->
+        <!-- ============================================== -->
+        <nav th:if="${totalPages > 1}"
+             class="bg-white px-4 py-3.5 mt-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <p class="text-sm text-slate-600">
+                Page <span class="font-semibold text-slate-900" th:text="${currentPage + 1}">1</span> sur <span class="font-semibold text-slate-900" th:text="${totalPages}">1</span>
+                &mdash; <span class="font-semibold text-slate-900" th:text="${totalElements}">0</span> au total
+            </p>
+            <div class="flex items-center gap-2">
+                <a th:if="${currentPage > 0}"
+                   th:href="@{/teams(page=${currentPage - 1}, search=${search})}"
+                   class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
+                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                    <span>Précédent</span>
+                </a>
+                <a th:if="${currentPage < totalPages - 1}"
+                   th:href="@{/teams(page=${currentPage + 1}, search=${search})}"
+                   class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
+                    <span>Suivant</span>
+                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- 5. MODALE DE SUPPRESSION (Alpine.js + HTMX)    -->
+    <!-- ============================================== -->
+    <div x-data="{
+            open: false,
+            id: null,
+            name: '',
+            isDeleting: false,
+            confirmDelete() {
+                if (!this.id) return;
+                this.isDeleting = true;
+                htmx.ajax('DELETE', '/teams/' + this.id, {
+                    target: '#team-row-' + this.id + ', #team-card-' + this.id,
+                    swap: 'delete'
+                }).then(() => {
+                    this.open = false;
+                    this.isDeleting = false;
+                    window.dispatchEvent(new CustomEvent('toast', {
+                        detail: { message: 'Équipe supprimée avec succès', type: 'success' }
+                    }));
+                }).catch(() => {
+                    this.isDeleting = false;
+                    window.dispatchEvent(new CustomEvent('toast', {
+                        detail: { message: 'Erreur lors de la suppression de l\'équipe', type: 'error' }
+                    }));
+                });
+            }
+         }"
+         @open-delete.window="open = true; id = $event.detail.id; name = $event.detail.name"
+         class="relative z-50">
+
+        <!-- Arrière-plan assombri -->
+        <div x-show="open"
+             x-transition:enter="transition-opacity ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition-opacity ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
+             style="display: none;"
+             aria-hidden="true"></div>
+
+        <!-- Boîte de dialogue modale -->
+        <div x-show="open"
+             style="display: none;"
+             class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div x-show="open"
+                 @click.away="if (!isDeleting) open = false"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full p-6">
+
+                <div class="flex items-start gap-4">
+                    <span class="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                        <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                    </span>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Supprimer cette équipe ?</h3>
+                        <p class="mt-1 text-sm text-slate-500">
+                            Êtes-vous sûr de vouloir supprimer <strong class="text-slate-800" x-text="name"></strong> ? Cette action est irréversible et retirera l'équipe de ses matchs et inscriptions associées.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex items-center justify-end gap-3">
+                    <button type="button"
+                            @click="open = false"
+                            :disabled="isDeleting"
+                            class="px-4 py-2.5 text-sm font-semibold rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400 transition-all duration-200">
+                        Annuler
+                    </button>
+                    <button type="button"
+                            @click="confirmDelete()"
+                            :disabled="isDeleting"
+                            class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 shadow-sm transition-all duration-200">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        <span x-text="isDeleting ? 'Suppression...' : 'Supprimer définitivement'">Supprimer définitivement</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </div>
 </body>

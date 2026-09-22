@@ -1,24 +1,473 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
+<html lang="fr" xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       layout:decorate="~{layout}">
 <head>
-    <title>Détail de l'équipe</title>
+    <title th:text="'Équipe ' + ${team.name}">Détail de l'équipe</title>
 </head>
 <body>
-<div layout:fragment="content">
+<div layout:fragment="content"
+     th:with="canManage=${#authorization.expression('hasAnyRole(''ADMIN'',''MANAGER'')')}"
+     x-data="{ addPlayerOpen: false, deleteTeamOpen: false }">
 
-    <h1 th:text="${team.name}">Nom de l'équipe</h1>
+    <!-- Fil d'ariane (Breadcrumb) -->
+    <nav class="mb-6 flex items-center gap-2 text-sm text-slate-500" aria-label="Fil d'ariane">
+        <a th:href="@{/teams}"
+           class="inline-flex items-center gap-1.5 hover:text-indigo-600 transition-all duration-200">
+            <i data-lucide="users" class="w-4 h-4"></i>
+            <span>Équipes</span>
+        </a>
+        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i>
+        <span class="font-semibold text-slate-900" th:text="${team.name}">Nom de l'équipe</span>
+    </nav>
 
-    <table>
-        <tr><th>Ville</th><td th:text="${team.city}"></td></tr>
-        <tr><th>Entraîneur</th><td th:text="${team.coachName}"></td></tr>
-        <tr><th>Statut</th><td th:text="${team.status}"></td></tr>
-    </table>
+    <!-- En-tête de l'équipe (Hero card) -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
 
-    <p style="margin-top: 1.5rem;">
-        <a href="/teams" class="btn">Retour à la liste</a>
-    </p>
+            <!-- Identité de l'équipe -->
+            <div class="flex items-center gap-5 min-w-0">
+                <span th:if="${team.logo != null and !team.logo.isBlank()}"
+                      class="w-20 h-20 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-xs flex items-center justify-center shrink-0">
+                    <img th:src="${team.logo}" th:alt="${team.name}" class="w-full h-full object-cover"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span style="display:none;" class="w-full h-full bg-indigo-50 text-indigo-600 items-center justify-center font-extrabold text-2xl"
+                          th:text="${#strings.substring(team.name,0,1).toUpperCase()}">T</span>
+                </span>
+                <span th:if="${team.logo == null or team.logo.isBlank()}"
+                      class="w-20 h-20 rounded-2xl bg-indigo-50 text-indigo-600 shadow-xs flex items-center justify-center shrink-0">
+                    <i data-lucide="shield" class="w-10 h-10"></i>
+                </span>
+
+                <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 truncate"
+                            th:text="${team.name}">Nom de l'équipe</h1>
+
+                        <!-- Statut badge -->
+                        <span th:if="${team.status != null and team.status.name() == 'ACTIVE'}"
+                              class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                            Active
+                        </span>
+                        <span th:if="${team.status == null or team.status.name() != 'ACTIVE'}"
+                              class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                            Inactive
+                        </span>
+                    </div>
+
+                    <div class="mt-2 flex flex-wrap items-center gap-4 text-sm text-slate-500">
+                        <span class="inline-flex items-center gap-1.5">
+                            <i data-lucide="map-pin" class="w-4 h-4 text-slate-400"></i>
+                            <span th:text="${team.city != null and !team.city.isBlank()} ? ${team.city} : 'Ville non renseignée'">Ville</span>
+                        </span>
+                        <span class="text-slate-300">&bull;</span>
+                        <span class="inline-flex items-center gap-1.5">
+                            <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
+                            <span>Entraîneur : <strong class="text-slate-700 font-medium" th:text="${team.coachName != null and !team.coachName.isBlank()} ? ${team.coachName} : 'Non assigné'">Coach</strong></span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions sur l'équipe (ADMIN / MANAGER) -->
+            <div th:if="${canManage}" class="flex items-center gap-3 shrink-0">
+                <a th:href="@{/teams/{id}/edit(id=${team.id})}"
+                   class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400 transition-all duration-200">
+                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                    <span>Modifier</span>
+                </a>
+                <button type="button"
+                        @click="deleteTeamOpen = true"
+                        class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl border border-red-200 text-red-600 bg-red-50/50 hover:bg-red-100/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    <span>Supprimer</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grille des statistiques KPI de l'équipe -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+
+        <!-- Carte : Effectif -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Effectif</p>
+                <p class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900"
+                   th:text="${players != null ? players.size() : 0}">0</p>
+                <p class="mt-1 text-xs text-slate-400">Joueur(s) dans l'équipe</p>
+            </div>
+            <span class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                <i data-lucide="users" class="w-6 h-6"></i>
+            </span>
+        </div>
+
+        <!-- Carte : Compétitions -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Tournois inscrits</p>
+                <p class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900"
+                   th:text="${registrations != null ? registrations.size() : 0}">0</p>
+                <p class="mt-1 text-xs text-slate-400">Compétition(s) active(s)</p>
+            </div>
+            <span class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                <i data-lucide="trophy" class="w-6 h-6"></i>
+            </span>
+        </div>
+
+        <!-- Carte : Entraîneur -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Staff technique</p>
+                <p class="mt-2 text-lg font-bold text-slate-900 truncate max-w-[140px]"
+                   th:text="${team.coachName != null and !team.coachName.isBlank()} ? ${team.coachName} : 'Non assigné'">Coach</p>
+                <p class="mt-1 text-xs text-slate-400">Entraîneur principal</p>
+            </div>
+            <span class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <i data-lucide="user-check" class="w-6 h-6"></i>
+            </span>
+        </div>
+
+        <!-- Carte : Ville -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Localisation</p>
+                <p class="mt-2 text-lg font-bold text-slate-900 truncate max-w-[140px]"
+                   th:text="${team.city != null and !team.city.isBlank()} ? ${team.city} : 'Non renseignée'">Ville</p>
+                <p class="mt-1 text-xs text-slate-400">Siège ou club</p>
+            </div>
+            <span class="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                <i data-lucide="map-pin" class="w-6 h-6"></i>
+            </span>
+        </div>
+    </div>
+
+    <!-- Contenu principal : 2 sections (Effectif des joueurs & Inscriptions aux tournois) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <!-- Colonne Gauche (2/3) : Liste des joueurs de l'équipe -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <!-- En-tête de section -->
+                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <i data-lucide="users" class="w-5 h-5 text-indigo-600"></i>
+                        <h2 class="text-base font-bold text-slate-900">Effectif des joueurs</h2>
+                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700"
+                              th:text="${players != null ? players.size() : 0}">0</span>
+                    </div>
+                    <button th:if="${canManage}"
+                            type="button"
+                            @click="addPlayerOpen = true"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 shadow-xs transition-all duration-200">
+                        <i data-lucide="user-plus" class="w-4 h-4"></i>
+                        <span>Ajouter un joueur</span>
+                    </button>
+                </div>
+
+                <!-- Tableau des joueurs -->
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200" th:if="${players != null and !players.isEmpty()}">
+                        <thead class="bg-slate-50/80">
+                        <tr>
+                            <th scope="col" class="py-3 px-6 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">N°</th>
+                            <th scope="col" class="py-3 px-6 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Joueur</th>
+                            <th scope="col" class="py-3 px-6 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Poste</th>
+                            <th th:if="${canManage}" scope="col" class="py-3 px-6 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Action</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 bg-white">
+                        <tr th:each="player : ${players}"
+                            th:id="'player-row-' + ${player.id}"
+                            class="hover:bg-slate-50/80 transition-all duration-200">
+
+                            <!-- Numéro de maillot -->
+                            <td class="py-3.5 px-6 whitespace-nowrap">
+                                <span th:if="${player.jerseyNumber != null}"
+                                      class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 font-bold text-xs text-slate-700 font-mono"
+                                      th:text="${'#' + player.jerseyNumber}">#10</span>
+                                <span th:if="${player.jerseyNumber == null}"
+                                      class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-50 font-medium text-xs text-slate-400 font-mono">-</span>
+                            </td>
+
+                            <!-- Nom & Prénom -->
+                            <td class="py-3.5 px-6 whitespace-nowrap">
+                                <div class="flex items-center gap-3">
+                                    <span class="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">
+                                        <span th:text="${#strings.substring(player.firstName,0,1) + #strings.substring(player.lastName,0,1)}">JD</span>
+                                    </span>
+                                    <div>
+                                        <p class="text-sm font-semibold text-slate-900"
+                                           th:text="${player.firstName + ' ' + player.lastName}">Prénom Nom</p>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Poste -->
+                            <td class="py-3.5 px-6 whitespace-nowrap">
+                                <span th:if="${player.position != null and !player.position.isBlank()}"
+                                      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700"
+                                      th:text="${player.position}">Attaquant</span>
+                                <span th:if="${player.position == null or player.position.isBlank()}"
+                                      class="text-xs text-slate-400 italic">Non précisé</span>
+                            </td>
+
+                            <!-- Action de retrait -->
+                            <td th:if="${canManage}" class="py-3.5 px-6 text-right whitespace-nowrap">
+                                <button type="button"
+                                        hx-confirm="Confirmer le retrait de ce joueur ?"
+                                        th:hx-delete="@{/teams/{teamId}/players/{playerId}(teamId=${team.id},playerId=${player.id})}"
+                                        th:hx-target="'#player-row-' + ${player.id}"
+                                        hx-swap="delete"
+                                        class="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all duration-200"
+                                        title="Retirer le joueur">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- État vide effectif -->
+                <div th:if="${players == null or players.isEmpty()}" class="p-10 text-center">
+                    <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                        <i data-lucide="users" class="w-6 h-6"></i>
+                    </div>
+                    <p class="text-sm font-bold text-slate-900">Aucun joueur dans l'effectif</p>
+                    <p class="mt-1 text-xs text-slate-500">Ajoutez des joueurs pour composer la liste officielle de votre équipe.</p>
+                    <button th:if="${canManage}"
+                            type="button"
+                            @click="addPlayerOpen = true"
+                            class="mt-4 inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-all duration-200">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                        <span>Ajouter le premier joueur</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Colonne Droite (1/3) : Tournois & Inscriptions -->
+        <div class="space-y-6">
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <i data-lucide="trophy" class="w-5 h-5 text-amber-500"></i>
+                        <h2 class="text-base font-bold text-slate-900">Tournois associés</h2>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700"
+                          th:text="${registrations != null ? registrations.size() : 0}">0</span>
+                </div>
+
+                <!-- Liste des tournois inscrits -->
+                <ul th:if="${registrations != null and !registrations.isEmpty()}" class="divide-y divide-slate-100">
+                    <li th:each="reg : ${registrations}">
+                        <a th:href="@{/tournaments/{id}(id=${reg.tournament.id})}"
+                           class="flex items-start gap-3 px-6 py-4 hover:bg-slate-50 transition-all duration-200 group">
+                            <span class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-200">
+                                <i data-lucide="trophy" class="w-4 h-4"></i>
+                            </span>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-semibold text-slate-900 group-hover:text-indigo-600 transition-all duration-200 truncate"
+                                   th:text="${reg.tournament.name}">Nom du tournoi</p>
+                                <div class="flex items-center gap-2 text-xs text-slate-500 mt-1">
+                                    <span th:text="${reg.tournament.sport}">Sport</span>
+                                    <span class="text-slate-300">&bull;</span>
+                                    <span th:text="${reg.tournament.status}">Statut</span>
+                                </div>
+                            </div>
+                            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all duration-200 shrink-0 mt-1"></i>
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- État vide tournois -->
+                <div th:if="${registrations == null or registrations.isEmpty()}" class="p-8 text-center">
+                    <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-2.5">
+                        <i data-lucide="calendar-x" class="w-5 h-5"></i>
+                    </div>
+                    <p class="text-sm font-semibold text-slate-900">Aucune inscription active</p>
+                    <p class="mt-1 text-xs text-slate-500">Cette équipe n'est inscrite à aucun tournoi actuellement.</p>
+                    <a th:href="@{/tournaments}"
+                       class="mt-3.5 inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-800">
+                        <span>Consulter les tournois</span>
+                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ============================================== -->
+    <!-- MODALE : AJOUTER UN JOUEUR (Alpine.js)        -->
+    <!-- ============================================== -->
+    <div x-show="addPlayerOpen"
+         style="display: none;"
+         class="relative z-50">
+
+        <!-- Arrière-plan assombri -->
+        <div x-show="addPlayerOpen"
+             x-transition:enter="transition-opacity ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition-opacity ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
+             aria-hidden="true"></div>
+
+        <!-- Boîte de dialogue modale -->
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div x-show="addPlayerOpen"
+                 @click.away="addPlayerOpen = false"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full p-6">
+
+                <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                            <i data-lucide="user-plus" class="w-4 h-4"></i>
+                        </span>
+                        <h3 class="text-base font-bold text-slate-900">Ajouter un joueur</h3>
+                    </div>
+                    <button type="button" @click="addPlayerOpen = false" class="text-slate-400 hover:text-slate-600">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <form th:action="@{/teams/{teamId}/players(teamId=${team.id})}"
+                      th:object="${playerRequest}"
+                      method="post"
+                      class="mt-5 space-y-4">
+
+                    <!-- Prénom -->
+                    <div>
+                        <label for="firstName" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                            Prénom <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="firstName" name="firstName" required
+                               placeholder="Ex: Kylian"
+                               class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 bg-white placeholder-slate-400 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200">
+                    </div>
+
+                    <!-- Nom -->
+                    <div>
+                        <label for="lastName" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                            Nom <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="lastName" name="lastName" required
+                               placeholder="Ex: Mbappé"
+                               class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 bg-white placeholder-slate-400 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- Numéro de maillot -->
+                        <div>
+                            <label for="jerseyNumber" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                                N° Maillot
+                            </label>
+                            <input type="number" id="jerseyNumber" name="jerseyNumber" min="1" max="99"
+                                   placeholder="Ex: 7"
+                                   class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 bg-white placeholder-slate-400 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200">
+                        </div>
+
+                        <!-- Poste / Rôle -->
+                        <div>
+                            <label for="position" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                                Poste
+                            </label>
+                            <input type="text" id="position" name="position"
+                                   placeholder="Ex: Attaquant"
+                                   class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 bg-white placeholder-slate-400 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200">
+                        </div>
+                    </div>
+
+                    <!-- Boutons d'action modale -->
+                    <div class="mt-6 pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+                        <button type="button"
+                                @click="addPlayerOpen = false"
+                                class="px-4 py-2 text-sm font-semibold rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-all duration-200">
+                            Annuler
+                        </button>
+                        <button type="submit"
+                                class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm transition-all duration-200">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Ajouter</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- MODALE : SUPPRESSION D'ÉQUIPE (Alpine.js)     -->
+    <!-- ============================================== -->
+    <div x-show="deleteTeamOpen"
+         style="display: none;"
+         class="relative z-50">
+
+        <!-- Arrière-plan assombri -->
+        <div x-show="deleteTeamOpen"
+             x-transition:enter="transition-opacity ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition-opacity ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
+             aria-hidden="true"></div>
+
+        <!-- Boîte de dialogue modale -->
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div x-show="deleteTeamOpen"
+                 @click.away="deleteTeamOpen = false"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full p-6">
+
+                <div class="flex items-start gap-4">
+                    <span class="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                        <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                    </span>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">Supprimer cette équipe ?</h3>
+                        <p class="mt-1 text-sm text-slate-500">
+                            Êtes-vous sûr de vouloir archiver / supprimer définitivement l'équipe <strong class="text-slate-800" th:text="${team.name}"></strong> ? Ses inscriptions et ses joueurs associés seront également archivés.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex items-center justify-end gap-3">
+                    <button type="button"
+                            @click="deleteTeamOpen = false"
+                            class="px-4 py-2.5 text-sm font-semibold rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-all duration-200">
+                        Annuler
+                    </button>
+                    <form th:action="@{/teams/{id}/delete(id=${team.id})}" method="post">
+                        <button type="submit"
+                                class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 shadow-sm transition-all duration-200">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            <span>Supprimer définitivement</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </div>
 </body>

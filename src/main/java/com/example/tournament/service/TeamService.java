@@ -11,6 +11,8 @@ public interface TeamService {
     Team getTeamById(Long id);
 
     Page<Team> getAllTeams(Pageable pageable);
+    
+    Page<Team> searchTeams(String keyword, Pageable pageable);
 
     Team updateTeam(Long id, Team updatedData);
 

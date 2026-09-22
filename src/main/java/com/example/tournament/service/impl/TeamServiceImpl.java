@@ -48,6 +48,14 @@ public class TeamServiceImpl implements TeamService {
     }
 
     @Override
+    public Page<Team> searchTeams(String keyword, Pageable pageable) {
+        if (keyword != null && !keyword.isBlank()) {
+            return teamRepository.searchTeams(keyword.trim(), pageable);
+        }
+        return teamRepository.findByArchivedFalse(pageable);
+    }
+
+    @Override
     @Transactional
     public Team updateTeam(Long id, Team updatedData) {
 

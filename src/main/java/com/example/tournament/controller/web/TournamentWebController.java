@@ -16,6 +16,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -223,5 +225,25 @@ public class TournamentWebController {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
         return "redirect:/tournaments";
+    }
+
+    /**
+     * Suppression appelée par HTMX depuis la modale de confirmation.
+     * En cas de succès, on renvoie un HX-Trigger pour afficher un toast côté client.
+     */
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @ResponseBody // Indique qu'on ne renvoie pas de vue HTML
+    public ResponseEntity<Void> deleteTournamentViaHtmx(@PathVariable Long id) {
+        try {
+            tournamentService.deleteTournament(id);
+            return ResponseEntity.ok()
+                    .header("HX-Trigger", "toast")
+                    .build(); // Renvoie un 200 OK
+        } catch (BusinessException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .header("HX-Trigger", "toast")
+                    .build(); // 409 : le client peut afficher une erreur
+        }
     }
 }

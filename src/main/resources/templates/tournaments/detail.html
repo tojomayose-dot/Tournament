@@ -1,114 +1,434 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
+<html lang="fr" xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       layout:decorate="~{layout}">
 <head>
-    <title>Détail du tournoi</title>
+    <title th:text="'Tournoi - ' + ${tournament.name}">Détail du tournoi</title>
 </head>
 <body>
-<div layout:fragment="content">
+<div layout:fragment="content"
+     th:with="canManage=${#authorization.expression('hasAnyRole(''ADMIN'',''MANAGER'')')},
+              canOperate=${#authorization.expression('hasAnyRole(''ADMIN'',''MANAGER'',''OPERATOR'')')}"
+     x-data="{ registerOpen: false }">
 
-    <h1 th:text="${tournament.name}">Nom du tournoi</h1>
+    <!-- ===== FIL D'ARIANE ===== -->
+    <nav class="mb-6 flex items-center gap-2 text-sm text-slate-500" aria-label="Fil d'ariane">
+        <a th:href="@{/tournaments}"
+           class="inline-flex items-center gap-1.5 hover:text-indigo-600 transition-all duration-200">
+            <i data-lucide="trophy" class="w-4 h-4"></i>
+            <span>Tournois</span>
+        </a>
+        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i>
+        <span class="font-semibold text-slate-900" th:text="${tournament.name}">Nom du tournoi</span>
+    </nav>
 
-    <p th:if="${errorMessage}" class="error" th:text="${errorMessage}"></p>
+    <!-- ===== EN-TÊTE DU TOURNOI (Hero card) ===== -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
 
-    <table>
-        <tr><th>Sport</th><td th:text="${tournament.sport}"></td></tr>
-        <tr><th>Type</th><td th:text="${tournament.type}"></td></tr>
-        <tr><th>Statut</th><td th:text="${tournament.status}"></td></tr>
-        <tr><th>Dates</th><td th:text="${tournament.startDate} + ' → ' + ${tournament.endDate}"></td></tr>
-        <tr><th>Lieu</th><td th:text="${tournament.location}"></td></tr>
-        <tr><th>Max équipes</th><td th:text="${tournament.maxTeams}"></td></tr>
-    </table>
+            <!-- Identité du tournoi -->
+            <div class="flex items-center gap-5 min-w-0">
+                <span class="w-20 h-20 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 shadow-xs">
+                    <i data-lucide="trophy" class="w-10 h-10"></i>
+                </span>
+                <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 truncate"
+                            th:text="${tournament.name}">Nom du tournoi</h1>
 
-    <hr>
+                        <!-- Badge statut -->
+                        <span th:switch="${tournament.status.name()}" th:remove="tag">
+                            <span th:case="'EN_COURS'"
+                                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>En cours
+                            </span>
+                            <span th:case="'INSCRIPTION'"
+                                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-sky-600"></span>Inscriptions ouvertes
+                            </span>
+                            <span th:case="'PROGRAMME'"
+                                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>Programmé
+                            </span>
+                            <span th:case="'TERMINE'"
+                                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>Terminé
+                            </span>
+                            <span th:case="'ANNULE'"
+                                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span>Annulé
+                            </span>
+                            <span th:case="*"
+                                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>Brouillon
+                            </span>
+                        </span>
+                    </div>
 
-    <!-- ===== INSCRIPTION D'ÉQUIPES ===== -->
-    <h2>Inscrire une équipe</h2>
-    <form sec:authorize="hasAnyRole('ADMIN','MANAGER','OPERATOR')"
-          th:action="@{/tournaments/{id}/teams(id=${tournament.id})}" method="post">
-        <select name="teamId" required>
-            <option value="">-- Choisir une équipe --</option>
-            <option th:each="team : ${allTeams}" th:value="${team.id}" th:text="${team.name}"></option>
-        </select>
-        <button type="submit" class="btn">Inscrire</button>
-    </form>
+                    <div class="mt-2 flex flex-wrap items-center gap-4 text-sm text-slate-500">
+                        <span class="inline-flex items-center gap-1.5">
+                            <i data-lucide="dumbbell" class="w-4 h-4 text-slate-400"></i>
+                            <span th:text="${tournament.sport}">Sport</span>
+                        </span>
+                        <span class="text-slate-300">&bull;</span>
+                        <span class="inline-flex items-center gap-1.5">
+                            <i data-lucide="git-branch" class="w-4 h-4 text-slate-400"></i>
+                            <span th:text="${tournament.type.name() == 'CHAMPIONNAT'} ? 'Championnat' : 'Élimination directe'">Format</span>
+                        </span>
+                        <span class="text-slate-300">&bull;</span>
+                        <span class="inline-flex items-center gap-1.5">
+                            <i data-lucide="map-pin" class="w-4 h-4 text-slate-400"></i>
+                            <span th:text="${tournament.location}">Lieu</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
 
-    <hr>
-
-    <!-- ===== GÉNÉRATION DES MATCHS ===== -->
-    <div sec:authorize="hasAnyRole('ADMIN','MANAGER')">
-        <h2>Matchs</h2>
-        <form th:unless="${hasMatches}"
-              th:action="@{/tournaments/{id}/generate-matches(id=${tournament.id})}" method="post">
-            <button type="submit" class="btn">Générer les matchs</button>
-        </form>
+            <!-- Actions (ADMIN / MANAGER) -->
+            <div th:if="${canManage}" class="flex items-center gap-3 shrink-0">
+                <a th:href="@{/tournaments/{id}/edit(id=${tournament.id})}"
+                   class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400 transition-all duration-200">
+                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                    <span>Modifier</span>
+                </a>
+            </div>
+        </div>
     </div>
 
-    <p th:if="${hasMatches == false}">Aucun match généré pour le moment.</p>
+    <!-- ===== GRILLE KPI ===== -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
 
-    <table th:if="${hasMatches}">
-        <thead>
-        <tr>
-            <th>Phase</th>
-            <th>Domicile</th>
-            <th>Score</th>
-            <th>Extérieur</th>
-            <th>Statut</th>
-            <th sec:authorize="hasAnyRole('ADMIN','MANAGER','OPERATOR')">Résultat</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="m : ${matches}">
-            <td th:text="${m.phase}"></td>
-            <td th:text="${m.homeTeamName}"></td>
-            <td th:text="${m.homeScore} + ' - ' + ${m.awayScore}"></td>
-            <td th:text="${m.awayTeamName}"></td>
-            <td th:text="${m.status}"></td>
-            <td sec:authorize="hasAnyRole('ADMIN','MANAGER','OPERATOR')">
-                <form th:if="${m.status.name() == 'PLANIFIE'}"
-                      th:action="@{/tournaments/{tid}/matches/{mid}/result(tid=${tournament.id},mid=${m.id})}"
-                      method="post" style="display:flex; gap:0.3rem;">
-                    <input type="number" name="homeScore" min="0" placeholder="Dom." style="width:60px;" required>
-                    <input type="number" name="awayScore" min="0" placeholder="Ext." style="width:60px;" required>
-                    <button type="submit" class="btn">OK</button>
+        <!-- Carte : Date de début -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Début</p>
+                <p class="mt-2 text-lg font-bold text-slate-900"
+                   th:text="${tournament.startDate != null ? #temporals.format(tournament.startDate, 'dd/MM/yyyy') : 'Non définie'}">--/--/----</p>
+                <p class="mt-1 text-xs text-slate-400">Date de démarrage</p>
+            </div>
+            <span class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                <i data-lucide="calendar-play" class="w-6 h-6"></i>
+            </span>
+        </div>
+
+        <!-- Carte : Date de fin -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Fin</p>
+                <p class="mt-2 text-lg font-bold text-slate-900"
+                   th:text="${tournament.endDate != null ? #temporals.format(tournament.endDate, 'dd/MM/yyyy') : 'Non définie'}">--/--/----</p>
+                <p class="mt-1 text-xs text-slate-400">Date de clôture</p>
+            </div>
+            <span class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                <i data-lucide="calendar-check" class="w-6 h-6"></i>
+            </span>
+        </div>
+
+        <!-- Carte : Équipes inscrites -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Équipes</p>
+                <p class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900"
+                   th:text="${matches != null ? tournament.maxTeams : 0}">0</p>
+                <p class="mt-1 text-xs text-slate-400">Max. : <span th:text="${tournament.maxTeams}">0</span></p>
+            </div>
+            <span class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <i data-lucide="users" class="w-6 h-6"></i>
+            </span>
+        </div>
+
+        <!-- Carte : Matchs -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Matchs</p>
+                <p class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900"
+                   th:text="${matches != null ? matches.size() : 0}">0</p>
+                <p class="mt-1 text-xs text-slate-400">Rencontres planifiées</p>
+            </div>
+            <span class="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                <i data-lucide="swords" class="w-6 h-6"></i>
+            </span>
+        </div>
+    </div>
+
+    <!-- ===== CONTENU PRINCIPAL : 2 colonnes ===== -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <!-- Colonne gauche (2/3) : Matchs -->
+        <div class="lg:col-span-2 space-y-6">
+
+            <!-- Section : Génération des matchs (ADMIN / MANAGER) -->
+            <div sec:authorize="hasAnyRole('ADMIN','MANAGER')" th:if="${!hasMatches}"
+                 class="bg-white rounded-xl border border-amber-200 shadow-sm p-6 flex flex-col sm:flex-row items-start sm:items-center gap-5">
+                <span class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                    <i data-lucide="zap" class="w-6 h-6"></i>
+                </span>
+                <div class="flex-1 min-w-0">
+                    <h3 class="text-sm font-bold text-slate-900">Aucun match généré</h3>
+                    <p class="mt-1 text-xs text-slate-500">Lancez la génération automatique des rencontres pour démarrer la compétition.</p>
+                </div>
+                <form th:action="@{/tournaments/{id}/generate-matches(id=${tournament.id})}" method="post" class="shrink-0">
+                    <button type="submit"
+                            class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-sm transition-all duration-200">
+                        <i data-lucide="play-circle" class="w-4 h-4"></i>
+                        Générer les matchs
+                    </button>
                 </form>
-            </td>
-        </tr>
-        </tbody>
-    </table>
+            </div>
 
-    <!-- ===== CLASSEMENT (championnat uniquement) ===== -->
-    <div th:if="${ranking != null}">
-        <hr>
-        <h2>Classement</h2>
-        <table>
-            <thead>
-            <tr>
-                <th>Équipe</th><th>J</th><th>V</th><th>N</th><th>D</th>
-                <th>BP</th><th>BC</th><th>Diff</th><th>Pts</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="r : ${ranking}">
-                <td th:text="${r.teamName}"></td>
-                <td th:text="${r.played}"></td>
-                <td th:text="${r.won}"></td>
-                <td th:text="${r.drawn}"></td>
-                <td th:text="${r.lost}"></td>
-                <td th:text="${r.goalsFor}"></td>
-                <td th:text="${r.goalsAgainst}"></td>
-                <td th:text="${r.goalDifference}"></td>
-                <td th:text="${r.points}"><b></b></td>
-            </tr>
-            </tbody>
-        </table>
+            <!-- Section : Tableau des matchs -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <!-- En-tête section -->
+                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <i data-lucide="swords" class="w-5 h-5 text-indigo-600"></i>
+                        <h2 class="text-base font-bold text-slate-900">Matchs</h2>
+                        <span th:if="${hasMatches}"
+                              class="px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700"
+                              th:text="${matches.size()}">0</span>
+                    </div>
+                </div>
+
+                <!-- Tableau des matchs -->
+                <div th:if="${hasMatches}" class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200">
+                        <thead class="bg-slate-50/80">
+                        <tr>
+                            <th scope="col" class="py-3.5 px-6 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Phase</th>
+                            <th scope="col" class="py-3.5 px-6 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Domicile</th>
+                            <th scope="col" class="py-3.5 px-6 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">Score</th>
+                            <th scope="col" class="py-3.5 px-6 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Extérieur</th>
+                            <th scope="col" class="py-3.5 px-6 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Statut</th>
+                            <th sec:authorize="hasAnyRole('ADMIN','MANAGER','OPERATOR')"
+                                scope="col" class="py-3.5 px-6 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Résultat</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 bg-white">
+                        <tr th:each="m : ${matches}" class="hover:bg-slate-50/80 transition-all duration-200">
+                            <!-- Phase -->
+                            <td class="py-4 px-6 whitespace-nowrap">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700"
+                                      th:text="${m.phase}">Phase</span>
+                            </td>
+                            <!-- Équipe domicile -->
+                            <td class="py-4 px-6 whitespace-nowrap">
+                                <span class="text-sm font-semibold text-slate-900" th:text="${m.homeTeamName}">Équipe</span>
+                            </td>
+                            <!-- Score -->
+                            <td class="py-4 px-6 whitespace-nowrap text-center">
+                                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-slate-100 text-sm font-bold text-slate-800 font-mono">
+                                    <span th:text="${m.homeScore}">0</span>
+                                    <span class="text-slate-400">–</span>
+                                    <span th:text="${m.awayScore}">0</span>
+                                </span>
+                            </td>
+                            <!-- Équipe extérieur -->
+                            <td class="py-4 px-6 whitespace-nowrap">
+                                <span class="text-sm font-semibold text-slate-900" th:text="${m.awayTeamName}">Équipe</span>
+                            </td>
+                            <!-- Statut du match -->
+                            <td class="py-4 px-6 whitespace-nowrap">
+                                <span th:switch="${m.status.name()}" th:remove="tag">
+                                    <span th:case="'PLANIFIE'"
+                                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Planifié
+                                    </span>
+                                    <span th:case="'JOUE'"
+                                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Joué
+                                    </span>
+                                    <span th:case="*"
+                                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                        <span th:text="${m.status}">Statut</span>
+                                    </span>
+                                </span>
+                            </td>
+                            <!-- Saisie du résultat (OPERATOR+) -->
+                            <td sec:authorize="hasAnyRole('ADMIN','MANAGER','OPERATOR')"
+                                class="py-3 px-6 text-right whitespace-nowrap">
+                                <form th:if="${m.status.name() == 'PLANIFIE'}"
+                                      th:action="@{/tournaments/{tid}/matches/{mid}/result(tid=${tournament.id},mid=${m.id})}"
+                                      method="post"
+                                      class="inline-flex items-center gap-1.5">
+                                    <input type="number" name="homeScore" min="0" placeholder="Dom."
+                                           class="w-14 px-2 py-1.5 text-xs text-center rounded-lg border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200" required>
+                                    <span class="text-xs text-slate-400 font-bold">–</span>
+                                    <input type="number" name="awayScore" min="0" placeholder="Ext."
+                                           class="w-14 px-2 py-1.5 text-xs text-center rounded-lg border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200" required>
+                                    <button type="submit"
+                                            class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-all duration-200">
+                                        <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                                        OK
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- État vide matchs -->
+                <div th:if="${!hasMatches}" class="p-10 text-center">
+                    <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                        <i data-lucide="swords" class="w-6 h-6"></i>
+                    </div>
+                    <p class="text-sm font-bold text-slate-900">Aucun match généré pour le moment</p>
+                    <p class="mt-1 text-xs text-slate-500">Inscrivez des équipes, puis générez les rencontres depuis le bandeau ci-dessus.</p>
+                </div>
+            </div>
+
+            <!-- ===== CLASSEMENT (Championnat uniquement) ===== -->
+            <div th:if="${ranking != null}" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <!-- En-tête section -->
+                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50/50 flex items-center gap-2.5">
+                    <i data-lucide="bar-chart-2" class="w-5 h-5 text-indigo-600"></i>
+                    <h2 class="text-base font-bold text-slate-900">Classement</h2>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200">
+                        <thead class="bg-slate-50/80">
+                        <tr>
+                            <th scope="col" class="py-3.5 px-6 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">#</th>
+                            <th scope="col" class="py-3.5 px-6 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Équipe</th>
+                            <th scope="col" class="py-3.5 px-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">J</th>
+                            <th scope="col" class="py-3.5 px-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">V</th>
+                            <th scope="col" class="py-3.5 px-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">N</th>
+                            <th scope="col" class="py-3.5 px-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">D</th>
+                            <th scope="col" class="py-3.5 px-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">BP</th>
+                            <th scope="col" class="py-3.5 px-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">BC</th>
+                            <th scope="col" class="py-3.5 px-4 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">Diff</th>
+                            <th scope="col" class="py-3.5 px-6 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">Pts</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 bg-white">
+                        <tr th:each="r, stat : ${ranking}"
+                            class="hover:bg-slate-50/80 transition-all duration-200"
+                            th:classappend="${stat.index == 0} ? 'bg-indigo-50/30' : ''">
+                            <!-- Rang -->
+                            <td class="py-4 px-6 whitespace-nowrap">
+                                <span th:if="${stat.index == 0}"
+                                      class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-600 text-white text-xs font-bold">1</span>
+                                <span th:if="${stat.index == 1}"
+                                      class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-slate-400 text-white text-xs font-bold">2</span>
+                                <span th:if="${stat.index == 2}"
+                                      class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-amber-600 text-white text-xs font-bold">3</span>
+                                <span th:if="${stat.index > 2}"
+                                      class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-slate-100 text-slate-600 text-xs font-bold"
+                                      th:text="${stat.index + 1}">4</span>
+                            </td>
+                            <!-- Équipe -->
+                            <td class="py-4 px-6 whitespace-nowrap">
+                                <div class="flex items-center gap-3">
+                                    <span class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">
+                                        <span th:text="${#strings.substring(r.teamName,0,1).toUpperCase()}">T</span>
+                                    </span>
+                                    <span class="text-sm font-semibold text-slate-900" th:text="${r.teamName}">Équipe</span>
+                                </div>
+                            </td>
+                            <td class="py-4 px-4 text-center text-sm text-slate-600" th:text="${r.played}">0</td>
+                            <td class="py-4 px-4 text-center text-sm text-emerald-700 font-semibold" th:text="${r.won}">0</td>
+                            <td class="py-4 px-4 text-center text-sm text-slate-500" th:text="${r.drawn}">0</td>
+                            <td class="py-4 px-4 text-center text-sm text-red-600" th:text="${r.lost}">0</td>
+                            <td class="py-4 px-4 text-center text-sm text-slate-600" th:text="${r.goalsFor}">0</td>
+                            <td class="py-4 px-4 text-center text-sm text-slate-600" th:text="${r.goalsAgainst}">0</td>
+                            <td class="py-4 px-4 text-center text-sm text-slate-600"
+                                th:text="${r.goalDifference > 0} ? ('+' + r.goalDifference) : ${r.goalDifference}">0</td>
+                            <td class="py-4 px-6 text-center whitespace-nowrap">
+                                <span class="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-indigo-600 text-white text-sm font-extrabold min-w-[2.5rem]"
+                                      th:text="${r.points}">0</span>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Colonne droite (1/3) : Infos + Inscription équipe -->
+        <div class="space-y-6">
+
+            <!-- Card : Informations du tournoi -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50/50 flex items-center gap-2.5">
+                    <i data-lucide="info" class="w-5 h-5 text-slate-500"></i>
+                    <h2 class="text-base font-bold text-slate-900">Informations</h2>
+                </div>
+                <dl class="divide-y divide-slate-100">
+                    <div class="flex items-center justify-between px-6 py-3.5">
+                        <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Sport</dt>
+                        <dd class="text-sm font-medium text-slate-900" th:text="${tournament.sport}">Sport</dd>
+                    </div>
+                    <div class="flex items-center justify-between px-6 py-3.5">
+                        <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Format</dt>
+                        <dd class="text-sm font-medium text-slate-900"
+                            th:text="${tournament.type.name() == 'CHAMPIONNAT'} ? 'Championnat' : 'Élimination directe'">Format</dd>
+                    </div>
+                    <div class="flex items-center justify-between px-6 py-3.5">
+                        <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Lieu</dt>
+                        <dd class="text-sm font-medium text-slate-900" th:text="${tournament.location}">Lieu</dd>
+                    </div>
+                    <div class="flex items-center justify-between px-6 py-3.5">
+                        <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Max équipes</dt>
+                        <dd class="text-sm font-medium text-slate-900" th:text="${tournament.maxTeams}">0</dd>
+                    </div>
+                    <div class="flex items-center justify-between px-6 py-3.5">
+                        <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Début</dt>
+                        <dd class="text-sm font-medium text-slate-900"
+                            th:text="${tournament.startDate != null ? #temporals.format(tournament.startDate, 'dd/MM/yyyy') : '—'}">--</dd>
+                    </div>
+                    <div class="flex items-center justify-between px-6 py-3.5">
+                        <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Fin</dt>
+                        <dd class="text-sm font-medium text-slate-900"
+                            th:text="${tournament.endDate != null ? #temporals.format(tournament.endDate, 'dd/MM/yyyy') : '—'}">--</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <!-- Card : Inscrire une équipe -->
+            <div sec:authorize="hasAnyRole('ADMIN','MANAGER','OPERATOR')"
+                 class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50/50 flex items-center gap-2.5">
+                    <i data-lucide="user-plus" class="w-5 h-5 text-indigo-600"></i>
+                    <h2 class="text-base font-bold text-slate-900">Inscrire une équipe</h2>
+                </div>
+                <div class="p-6">
+                    <form th:action="@{/tournaments/{id}/teams(id=${tournament.id})}" method="post" class="space-y-4">
+                        <div>
+                            <label for="teamId" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                                Équipe <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <i data-lucide="users" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                                <select name="teamId" id="teamId" required
+                                        class="appearance-none w-full pl-10 pr-10 py-2.5 text-sm rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 cursor-pointer">
+                                    <option value="">-- Choisir une équipe --</option>
+                                    <option th:each="team : ${allTeams}"
+                                            th:value="${team.id}"
+                                            th:text="${team.name}">Équipe</option>
+                                </select>
+                                <i data-lucide="chevron-down" class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                            </div>
+                        </div>
+                        <button type="submit"
+                                class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-sm transition-all duration-200">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            Inscrire l'équipe
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Lien retour -->
+            <a th:href="@{/tournaments}"
+               class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400 transition-all duration-200">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Retour à la liste
+            </a>
+        </div>
     </div>
-
-    <p style="margin-top: 1.5rem;">
-        <a href="/tournaments" class="btn">Retour à la liste</a>
-    </p>
 
 </div>
 </body>

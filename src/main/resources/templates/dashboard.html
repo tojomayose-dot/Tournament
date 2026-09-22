@@ -1,14 +1,130 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
+<html lang="fr" xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout}">
 <head>
     <title>Tableau de bord</title>
 </head>
 <body>
-    <div layout:fragment="content">
-        <h1>Bienvenue sur le tableau de bord</h1>
-        <p>Vous êtes connecté avec succès.</p>
+<div layout:fragment="content">
+
+    <!-- En-tête de la page -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">Tableau de bord</h1>
+            <p class="mt-1 text-sm text-slate-500">Vue d'ensemble de vos competitions, equipes et indicateurs cles.</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a th:href="@{/tournaments/new}"
+               class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
+                <i data-lucide="plus" class="w-5 h-5"></i>
+                Nouveau tournoi
+            </a>
+        </div>
     </div>
+
+    <!-- Grille des indicateurs KPI -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+
+        <!-- Carte : Tournois en cours -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex items-center justify-between transition-all duration-200 hover:shadow-md">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Tournois en cours</p>
+                <p class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900" th:text="${ongoingCount}">0</p>
+            </div>
+            <span class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                <i data-lucide="play-circle" class="w-6 h-6"></i>
+            </span>
+        </div>
+
+        <!-- Carte : Tournois a venir -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex items-center justify-between transition-all duration-200 hover:shadow-md">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">A venir / Inscriptions</p>
+                <p class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900" th:text="${upcomingCount}">0</p>
+            </div>
+            <span class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                <i data-lucide="calendar-clock" class="w-6 h-6"></i>
+            </span>
+        </div>
+
+        <!-- Carte : Tournois termines -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex items-center justify-between transition-all duration-200 hover:shadow-md">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Termines</p>
+                <p class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900" th:text="${finishedCount}">0</p>
+            </div>
+            <span class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+            </span>
+        </div>
+
+        <!-- Carte : Total equipes -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex items-center justify-between transition-all duration-200 hover:shadow-md">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Equipes inscrites</p>
+                <p class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900" th:text="${teamCount}">0</p>
+            </div>
+            <span class="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                <i data-lucide="users" class="w-6 h-6"></i>
+            </span>
+        </div>
+    </div>
+
+    <!-- Section : Tournois recents -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/50">
+            <div class="flex items-center gap-2.5">
+                <i data-lucide="history" class="w-5 h-5 text-slate-500"></i>
+                <h2 class="text-base font-semibold text-slate-900">Derniers tournois ajoutes</h2>
+            </div>
+            <a th:href="@{/tournaments}"
+               class="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-all duration-200">
+                <span>Tous les tournois</span>
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </a>
+        </div>
+
+        <ul class="divide-y divide-slate-100">
+            <li th:each="t : ${recentTournaments}">
+                <a th:href="@{/tournaments/{id}(id=${t.id})}"
+                   class="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-all duration-200 group">
+                    <span class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-200">
+                        <i data-lucide="trophy" class="w-5 h-5"></i>
+                    </span>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm font-semibold text-slate-900 group-hover:text-indigo-600 transition-all duration-200 truncate"
+                           th:text="${t.name}">Nom du tournoi</p>
+                        <div class="flex items-center gap-3 text-xs text-slate-500 mt-1">
+                            <span class="inline-flex items-center gap-1">
+                                <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i>
+                                <span th:if="${t.startDate != null}" th:text="${#temporals.format(t.startDate, 'dd/MM/yyyy')}">Date</span>
+                                <span th:if="${t.startDate == null}">Non planifie</span>
+                            </span>
+                            <span class="text-slate-300">&bull;</span>
+                            <span th:text="${t.sport}">Sport</span>
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all duration-200 shrink-0"></i>
+                </a>
+            </li>
+
+            <!-- Etat vide -->
+            <li th:if="${#lists.isEmpty(recentTournaments)}" class="px-6 py-12 text-center">
+                <span class="mx-auto w-12 h-12 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center mb-3">
+                    <i data-lucide="trophy" class="w-6 h-6"></i>
+                </span>
+                <p class="text-sm font-semibold text-slate-900">Aucun tournoi enregistre pour le moment</p>
+                <p class="mt-1 text-sm text-slate-500">Commencez par planifier et organiser votre premiere competition.</p>
+                <a th:href="@{/tournaments/new}"
+                   class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    Creer un tournoi
+                </a>
+            </li>
+        </ul>
+    </div>
+
+</div>
 </body>
 </html>

@@ -1,58 +1,252 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
+<html lang="fr" xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout}">
 <head>
-    <title>Nouveau tournoi</title>
+    <title th:text="${editId != null} ? 'Modifier le tournoi' : 'Nouveau tournoi'">Formulaire tournoi</title>
 </head>
 <body>
 <div layout:fragment="content">
 
-    <h1 th:text="${editId != null} ? 'Modifier le tournoi' : 'Créer un tournoi'">Créer un tournoi</h1>
-    
-    <p th:if="${errorMessage}" class="error" th:text="${errorMessage}"></p>
+    <!-- Fil d'ariane (Breadcrumb) -->
+    <nav class="mb-6 flex items-center gap-2 text-sm text-slate-500" aria-label="Fil d'ariane">
+        <a th:href="@{/tournaments}"
+           class="inline-flex items-center gap-1.5 hover:text-indigo-600 transition-all duration-200">
+            <i data-lucide="trophy" class="w-4 h-4"></i>
+            <span>Tournois</span>
+        </a>
+        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i>
+        <span class="font-semibold text-slate-900"
+              th:text="${editId != null} ? 'Modifier le tournoi' : 'Nouveau tournoi'">Nouveau tournoi</span>
+    </nav>
 
-    <form th:action="${editId != null} ? @{/tournaments/{id}/update(id=${editId})} : @{/tournaments}"th:object="${tournamentRequest}" method="post">
+    <div class="max-w-3xl">
 
-        <label>Nom du tournoi</label>
-        <input type="text" th:field="*{name}">
-        <p class="error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
+        <!-- En-tête de la page -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-extrabold tracking-tight text-slate-900"
+                th:text="${editId != null} ? 'Modifier le tournoi' : 'Nouveau tournoi'">
+                Nouveau tournoi
+            </h1>
+            <p class="mt-1 text-sm text-slate-500"
+               th:text="${editId != null} ? 'Mettez a jour les parametres et la configuration de la competition.' : 'Configurez et planifiez une nouvelle competition sportive.'">
+                Configurez et planifiez une nouvelle competition sportive.
+            </p>
+        </div>
 
-        <label>Sport</label>
-        <input type="text" th:field="*{sport}">
-        <p class="error" th:if="${#fields.hasErrors('sport')}" th:errors="*{sport}"></p>
+        <!-- Formulaire principal -->
+        <form th:action="${editId != null} ? @{/tournaments/{id}/update(id=${editId})} : @{/tournaments}"
+              th:object="${tournamentRequest}"
+              method="post"
+              class="space-y-6"
+              novalidate>
 
-        <label>Description</label>
-        <textarea th:field="*{description}" rows="3"></textarea>
-        <p class="error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></p>
+            <!-- Alerte globale d'erreur metier -->
+            <div th:if="${errorMessage}"
+                 class="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+                <span class="w-6 h-6 rounded-md bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                    <i data-lucide="circle-alert" class="w-4 h-4"></i>
+                </span>
+                <p class="text-sm font-medium text-red-800" th:text="${errorMessage}">Erreur metier</p>
+            </div>
 
-        <label>Date de début</label>
-        <input type="date" th:field="*{startDate}">
-        <p class="error" th:if="${#fields.hasErrors('startDate')}" th:errors="*{startDate}"></p>
+            <!-- ============================================== -->
+            <!-- 1. Section : Informations generales            -->
+            <!-- ============================================== -->
+            <section class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50/50 flex items-center gap-2.5">
+                    <span class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                        <i data-lucide="info" class="w-4 h-4"></i>
+                    </span>
+                    <h2 class="text-base font-bold text-slate-900">Informations generales</h2>
+                </div>
 
-        <label>Date de fin</label>
-        <input type="date" th:field="*{endDate}">
-        <p class="error" th:if="${#fields.hasErrors('endDate')}" th:errors="*{endDate}"></p>
+                <div class="p-6 space-y-5">
+                    <!-- Nom du tournoi -->
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-slate-700 mb-1.5">
+                            Nom du tournoi <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <i data-lucide="trophy" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                            <input type="text" id="name" th:field="*{name}"
+                                   placeholder="Ex: Coupe Inter-Entreprises 2026"
+                                   th:errorclass="border-red-400 focus:ring-red-500 focus:border-red-500"
+                                   class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-300 bg-white placeholder-slate-400 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200">
+                        </div>
+                        <p th:if="${#fields.hasErrors('name')}" th:errors="*{name}"
+                           class="mt-1.5 text-sm text-red-600 flex items-center gap-1.5">
+                            <i data-lucide="circle-alert" class="w-4 h-4 shrink-0"></i>
+                            <span>Erreur</span>
+                        </p>
+                    </div>
 
-        <label>Lieu</label>
-        <input type="text" th:field="*{location}">
+                    <!-- Sport / Discipline -->
+                    <div>
+                        <label for="sport" class="block text-sm font-medium text-slate-700 mb-1.5">
+                            Discipline sportive <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <i data-lucide="dumbbell" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                            <input type="text" id="sport" th:field="*{sport}"
+                                   placeholder="Ex: Football, Basketball, Tennis, Handball..."
+                                   th:errorclass="border-red-400 focus:ring-red-500 focus:border-red-500"
+                                   class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-300 bg-white placeholder-slate-400 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200">
+                        </div>
+                        <p th:if="${#fields.hasErrors('sport')}" th:errors="*{sport}"
+                           class="mt-1.5 text-sm text-red-600 flex items-center gap-1.5">
+                            <i data-lucide="circle-alert" class="w-4 h-4 shrink-0"></i>
+                            <span>Erreur</span>
+                        </p>
+                    </div>
 
-        <label>Nombre maximum d'équipes</label>
-        <input type="number" th:field="*{maxTeams}">
-        <p class="error" th:if="${#fields.hasErrors('maxTeams')}" th:errors="*{maxTeams}"></p>
+                    <!-- Description -->
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-slate-700 mb-1.5">
+                            Description ou reglement specifique
+                        </label>
+                        <textarea id="description" th:field="*{description}" rows="3"
+                                  placeholder="Precisions sur les regles, les modalites ou le deroulement du tournoi..."
+                                  class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-300 bg-white placeholder-slate-400 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 resize-y"></textarea>
+                    </div>
+                </div>
+            </section>
 
-        <label>Type de tournoi</label>
-        <select th:field="*{type}">
-            <option value="">-- Choisir --</option>
-            <option th:each="t : ${types}" th:value="${t}" th:text="${t}"></option>
-        </select>
-        <p class="error" th:if="${#fields.hasErrors('type')}" th:errors="*{type}"></p>
+            <!-- ============================================== -->
+            <!-- 2. Section : Planification & Lieu              -->
+            <!-- ============================================== -->
+            <section class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50/50 flex items-center gap-2.5">
+                    <span class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                        <i data-lucide="calendar" class="w-4 h-4"></i>
+                    </span>
+                    <h2 class="text-base font-bold text-slate-900">Planification &amp; Lieu</h2>
+                </div>
 
-        <br>
-        <button type="submit" class="btn">Créer</button>
-        <a href="/tournaments" class="btn" style="background:#95a5a6;">Annuler</a>
+                <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <!-- Date de debut -->
+                    <div>
+                        <label for="startDate" class="block text-sm font-medium text-slate-700 mb-1.5">
+                            Date de debut <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <i data-lucide="calendar" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                            <input type="date" id="startDate" th:field="*{startDate}"
+                                   th:errorclass="border-red-400 focus:ring-red-500 focus:border-red-500"
+                                   class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200">
+                        </div>
+                        <p th:if="${#fields.hasErrors('startDate')}" th:errors="*{startDate}"
+                           class="mt-1.5 text-sm text-red-600 flex items-center gap-1.5">
+                            <i data-lucide="circle-alert" class="w-4 h-4 shrink-0"></i>
+                            <span>Erreur</span>
+                        </p>
+                    </div>
 
-    </form>
+                    <!-- Date de fin -->
+                    <div>
+                        <label for="endDate" class="block text-sm font-medium text-slate-700 mb-1.5">
+                            Date de fin <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <i data-lucide="calendar" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                            <input type="date" id="endDate" th:field="*{endDate}"
+                                   th:errorclass="border-red-400 focus:ring-red-500 focus:border-red-500"
+                                   class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200">
+                        </div>
+                        <p th:if="${#fields.hasErrors('endDate')}" th:errors="*{endDate}"
+                           class="mt-1.5 text-sm text-red-600 flex items-center gap-1.5">
+                            <i data-lucide="circle-alert" class="w-4 h-4 shrink-0"></i>
+                            <span>Erreur</span>
+                        </p>
+                    </div>
+
+                    <!-- Lieu / Complexe sportif -->
+                    <div class="sm:col-span-2">
+                        <label for="location" class="block text-sm font-medium text-slate-700 mb-1.5">
+                            Lieu ou complexe sportif
+                        </label>
+                        <div class="relative">
+                            <i data-lucide="map-pin" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                            <input type="text" id="location" th:field="*{location}"
+                                   placeholder="Ex: Complexe Omnisports Jean Bouin, Paris"
+                                   class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-300 bg-white placeholder-slate-400 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================== -->
+            <!-- 3. Section : Format & Capacite                 -->
+            <!-- ============================================== -->
+            <section class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50/50 flex items-center gap-2.5">
+                    <span class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                        <i data-lucide="settings-2" class="w-4 h-4"></i>
+                    </span>
+                    <h2 class="text-base font-bold text-slate-900">Format &amp; Capacite</h2>
+                </div>
+
+                <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <!-- Format du tournoi -->
+                    <div>
+                        <label for="type" class="block text-sm font-medium text-slate-700 mb-1.5">
+                            Type de format <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <i data-lucide="git-branch" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                            <select id="type" th:field="*{type}"
+                                    th:errorclass="border-red-400 focus:ring-red-500 focus:border-red-500"
+                                    class="appearance-none w-full pl-10 pr-10 py-2.5 text-sm rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 cursor-pointer">
+                                <option value="" disabled selected>Selectionnez un format</option>
+                                <option th:each="t : ${types}" th:value="${t}"
+                                        th:text="${t.name() == 'CHAMPIONNAT'} ? 'Championnat (Poules / Points)' : 'Elimination directe (Arbre de tournoi)'">Format</option>
+                            </select>
+                            <i data-lucide="chevron-down" class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                        </div>
+                        <p th:if="${#fields.hasErrors('type')}" th:errors="*{type}"
+                           class="mt-1.5 text-sm text-red-600 flex items-center gap-1.5">
+                            <i data-lucide="circle-alert" class="w-4 h-4 shrink-0"></i>
+                            <span>Erreur</span>
+                        </p>
+                    </div>
+
+                    <!-- Nombre maximum d'equipes -->
+                    <div>
+                        <label for="maxTeams" class="block text-sm font-medium text-slate-700 mb-1.5">
+                            Nombre max d'equipes <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <i data-lucide="users" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                            <input type="number" id="maxTeams" th:field="*{maxTeams}" min="2" max="64" placeholder="Ex: 8 ou 16"
+                                   th:errorclass="border-red-400 focus:ring-red-500 focus:border-red-500"
+                                   class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-300 bg-white placeholder-slate-400 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200">
+                        </div>
+                        <p th:if="${#fields.hasErrors('maxTeams')}" th:errors="*{maxTeams}"
+                           class="mt-1.5 text-sm text-red-600 flex items-center gap-1.5">
+                            <i data-lucide="circle-alert" class="w-4 h-4 shrink-0"></i>
+                            <span>Erreur</span>
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================== -->
+            <!-- 4. Barre d'actions                             -->
+            <!-- ============================================== -->
+            <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3 pt-4">
+                <a th:href="${editId != null} ? @{/tournaments/{id}(id=${editId})} : @{/tournaments}"
+                   class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400 transition-all duration-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                    <span>Annuler</span>
+                </a>
+                <button type="submit"
+                        class="inline-flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-xl bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
+                    <i data-lucide="save" class="w-4 h-4"></i>
+                    <span th:text="${editId != null} ? 'Enregistrer les modifications' : 'Creer le tournoi'">Creer le tournoi</span>
+                </button>
+            </div>
+        </form>
+    </div>
 
 </div>
 </body>
