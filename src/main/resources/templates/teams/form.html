@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Nouvelle équipe</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <h1 th:text="${editId != null} ? 'Modifier l\'équipe' : 'Créer une équipe'">Créer une équipe</h1>
+
+    <p th:if="${errorMessage}" class="error" th:text="${errorMessage}"></p>
+
+    <form th:action="${editId != null} ? @{/teams/{id}/update(id=${editId})} : @{/teams}"
+          th:object="${teamRequest}" method="post">
+
+        <label>Nom de l'équipe</label>
+        <input type="text" th:field="*{name}">
+        <p class="error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
+
+        <label>Ville</label>
+        <input type="text" th:field="*{city}">
+
+        <label>Entraîneur</label>
+        <input type="text" th:field="*{coachName}">
+
+        <label>Logo (URL)</label>
+        <input type="text" th:field="*{logo}">
+
+        <br>
+        <button type="submit" class="btn" th:text="${editId != null} ? 'Enregistrer' : 'Créer'">Créer</button>
+        <a href="/teams" class="btn" style="background:#95a5a6;">Annuler</a>
+
+    </form>
+
+</div>
+</body>
+</html>

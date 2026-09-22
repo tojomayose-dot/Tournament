@@ -3,6 +3,8 @@ package com.example.tournament.repository;
 import com.example.tournament.entity.Tournament;
 import com.example.tournament.entity.TournamentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
@@ -14,7 +16,9 @@ public interface TournamentRepository extends JpaRepository<Tournament, Long>,
 
     List<Tournament> findByStatus(TournamentStatus status);
 
+    Page<Tournament> findByArchivedFalse(Pageable pageable);
+
     List<Tournament> findBySportIgnoreCase(String sport);
 
-    boolean existsByNameIgnoreCase(String name);
+    boolean existsByNameIgnoreCaseAndArchivedFalse(String name);
 }

@@ -216,8 +216,12 @@ public class TournamentWebController {
 
     @PostMapping("/{id}/delete")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public String deleteTournament(@PathVariable Long id) {
-        tournamentService.deleteTournament(id);
+    public String deleteTournament(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            tournamentService.deleteTournament(id);
+        } catch (BusinessException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
         return "redirect:/tournaments";
     }
 }

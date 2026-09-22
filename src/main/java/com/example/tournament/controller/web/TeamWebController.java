@@ -14,6 +14,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/teams")
@@ -73,6 +74,60 @@ public class TeamWebController {
             return "teams/form";
         }
 
+        return "redirect:/teams";
+    }
+
+    @GetMapping("/{id}/edit")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public String showEditForm(@PathVariable Long id, Model model) {
+
+        Team team = teamService.getTeamById(id);
+
+        CreateTeamRequest request = new CreateTeamRequest();
+        request.setName(team.getName());
+        request.setCity(team.getCity());
+        request.setCoachName(team.getCoachName());
+        request.setLogo(team.getLogo());
+
+        model.addAttribute("teamRequest", request);
+        model.addAttribute("editId", id);
+
+        return "teams/form";
+    }
+
+    @PostMapping("/{id}/update")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public String updateTeam(
+            @PathVariable Long id,
+            @Valid @ModelAttribute("teamRequest") CreateTeamRequest request,
+            BindingResult bindingResult,
+            Model model) {
+
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("editId", id);
+            return "teams/form";
+        }
+
+        try {
+            Team updatedData = teamMapper.toEntity(request);
+            teamService.updateTeam(id, updatedData);
+        } catch (BusinessException e) {
+            model.addAttribute("errorMessage", e.getMessage());
+            model.addAttribute("editId", id);
+            return "teams/form";
+        }
+
+        return "redirect:/teams/" + id;
+    }
+
+    @PostMapping("/{id}/delete")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public String deleteTeam(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            teamService.deleteTeam(id);
+        } catch (BusinessException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
         return "redirect:/teams";
     }
 }

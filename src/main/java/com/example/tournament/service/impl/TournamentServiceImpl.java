@@ -28,7 +28,7 @@ public class TournamentServiceImpl implements TournamentService {
             throw new BusinessException("La date de début doit être avant la date de fin.");
         }
 
-        if (tournamentRepository.existsByNameIgnoreCase(tournament.getName())) {
+        if (tournamentRepository.existsByNameIgnoreCaseAndArchivedFalse(tournament.getName())) {
             throw new BusinessException("Un tournoi avec ce nom existe déjà.");
         }
 
@@ -45,7 +45,7 @@ public class TournamentServiceImpl implements TournamentService {
 
     @Override
     public Page<Tournament> getAllTournaments(Pageable pageable) {
-        return tournamentRepository.findAll(pageable);
+        return tournamentRepository.findByArchivedFalse(pageable);
     }
 
     @Override
@@ -75,13 +75,20 @@ public class TournamentServiceImpl implements TournamentService {
     @Transactional
     public void deleteTournament(Long id) {
         Tournament existing = getTournamentById(id);
-        tournamentRepository.delete(existing);
+
+        // Soft delete : on archive au lieu de supprimer,
+        // pour préserver inscriptions et historique des matchs
+        existing.setArchived(true);
+        tournamentRepository.save(existing);
     }
 
     @Override
     public Page<Tournament> searchTournaments(String sport, TournamentStatus status, Pageable pageable) {
 
         Specification<Tournament> spec = (root, query, cb) -> cb.conjunction();
+
+        // Les tournois archivés n'apparaissent jamais dans les listes
+        spec = spec.and((root, query, cb) -> cb.isFalse(root.get("archived")));
 
         if (sport != null && !sport.isBlank()) {
             spec = spec.and((root, query, cb) -> cb.equal(cb.lower(root.get("sport")), sport.toLowerCase()));

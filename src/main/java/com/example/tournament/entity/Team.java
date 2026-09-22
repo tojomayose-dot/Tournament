@@ -35,6 +35,13 @@ public class Team {
     @Column(nullable = false)
     private TeamStatus status;
 
+    /**
+     * Soft delete : une équipe archivée reste en base (historique intact)
+     * mais disparaît de toutes les listes.
+     */
+    @Column(nullable = false)
+    private boolean archived;
+
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Player> players = new ArrayList<>();
 }

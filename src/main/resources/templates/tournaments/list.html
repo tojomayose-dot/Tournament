@@ -11,6 +11,8 @@
 
     <h1>Tournois</h1>
 
+    <p th:if="${errorMessage}" class="error" th:text="${errorMessage}"></p>
+
     <form method="get" style="display:flex; gap:1rem; align-items:end; margin-bottom:1rem;">
         <div>
             <label>Sport</label>

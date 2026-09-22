@@ -27,7 +27,7 @@ public class TeamServiceImpl implements TeamService {
     @Transactional
     public Team createTeam(Team team) {
 
-        if (teamRepository.existsByNameIgnoreCase(team.getName())) {
+        if (teamRepository.existsByNameIgnoreCaseAndArchivedFalse(team.getName())) {
             throw new BusinessException("Une équipe avec ce nom existe déjà.");
         }
 
@@ -44,7 +44,7 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     public Page<Team> getAllTeams(Pageable pageable) {
-        return teamRepository.findAll(pageable);
+        return teamRepository.findByArchivedFalse(pageable);
     }
 
     @Override
@@ -65,7 +65,11 @@ public class TeamServiceImpl implements TeamService {
     @Transactional
     public void deleteTeam(Long id) {
         Team existing = getTeamById(id);
-        teamRepository.delete(existing);
+
+        // Soft delete : on archive au lieu de supprimer,
+        // pour préserver les matchs et les inscriptions
+        existing.setArchived(true);
+        teamRepository.save(existing);
     }
 
     @Override
@@ -76,6 +80,14 @@ public class TeamServiceImpl implements TeamService {
                 .orElseThrow(() -> new ResourceNotFoundException("Tournoi introuvable avec l'id : " + tournamentId));
 
         Team team = getTeamById(teamId);
+
+        if (tournament.isArchived()) {
+            throw new BusinessException("Ce tournoi a été archivé, il n'accepte plus d'inscriptions.");
+        }
+
+        if (team.isArchived()) {
+            throw new BusinessException("Cette équipe a été archivée, elle ne peut plus s'inscrire.");
+        }
 
         if (tournament.getStatus() != TournamentStatus.INSCRIPTION
                 && tournament.getStatus() != TournamentStatus.BROUILLON) {

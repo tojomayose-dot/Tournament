@@ -11,6 +11,8 @@
 
     <h1>Équipes</h1>
 
+    <p th:if="${errorMessage}" class="error" th:text="${errorMessage}"></p>
+
     <p sec:authorize="hasAnyRole('ADMIN','MANAGER')">
         <a href="/teams/new" class="btn">+ Nouvelle équipe</a>
     </p>
@@ -35,6 +37,13 @@
             <td th:text="${team.status}">Statut</td>
             <td>
                 <a th:href="@{/teams/{id}(id=${team.id})}" class="btn">Détails</a>
+                <a sec:authorize="hasAnyRole('ADMIN','MANAGER')"
+                th:href="@{/teams/{id}/edit(id=${team.id})}" class="btn">Modifier</a>
+                <form sec:authorize="hasAnyRole('ADMIN','MANAGER')"
+                    th:action="@{/teams/{id}/delete(id=${team.id})}" method="post" style="display:inline;"
+                    onsubmit="return confirm('Supprimer cette équipe ?');">
+                    <button type="submit" class="btn btn-danger">Supprimer</button>
+                </form>
             </td>
         </tr>
         </tbody>

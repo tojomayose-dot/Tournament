@@ -47,4 +47,11 @@ public class Tournament {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TournamentStatus status;
+
+    /**
+     * Soft delete : un tournoi archivé reste en base (historique intact)
+     * mais disparaît de toutes les listes.
+     */
+    @Column(nullable = false)
+    private boolean archived;
 }
