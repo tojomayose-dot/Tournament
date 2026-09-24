@@ -49,62 +49,70 @@
         });
     </script>
 </head>
-<body class="bg-slate-50 text-slate-900 font-sans antialiased min-h-screen flex flex-col"
+<body class="bg-white text-slate-900 font-sans antialiased min-h-screen flex flex-col"
       x-data="{ sidebarOpen: false }">
 
 <div class="min-h-screen flex flex-1">
 
     <!-- ====== SIDEBAR DESKTOP ====== -->
-    <aside class="hidden md:flex md:flex-col w-64 shrink-0 bg-slate-900 text-slate-300">
+    <aside class="hidden md:flex md:flex-col w-64 shrink-0 bg-white border-r border-slate-100 shadow-sm">
         <!-- Logo & Titre -->
-        <div class="flex items-center gap-3 h-16 px-6 border-b border-slate-800">
-            <span class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shrink-0 shadow-sm">
+        <div class="flex items-center gap-3 h-16 px-6 border-b border-slate-100">
+            <span class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shrink-0 shadow-md shadow-indigo-200">
                 <i data-lucide="trophy" class="w-5 h-5 text-white"></i>
             </span>
-            <span class="text-lg font-bold tracking-tight text-white">
-                Tournament<span class="text-indigo-400">App</span>
+            <span class="text-lg font-bold tracking-tight text-slate-900">
+                Tournament<span class="text-indigo-600">App</span>
             </span>
         </div>
 
         <!-- Navigation principale -->
-        <nav class="flex-1 px-3 py-4 space-y-1">
+        <nav class="flex-1 px-3 py-5 space-y-0.5">
+            <p class="px-3 pb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Navigation</p>
+
             <a th:href="@{/dashboard}"
-               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-slate-800 hover:text-white"
-               th:classappend="${currentUri == '/dashboard'} ? 'bg-indigo-600/20 text-indigo-400 font-semibold' : 'text-slate-300'">
-                <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"
+               th:classappend="${currentUri == '/dashboard'} ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'">
+                <span th:classappend="${currentUri == '/dashboard'} ? 'text-indigo-600' : 'text-slate-400'">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                </span>
                 Tableau de bord
             </a>
 
             <a th:href="@{/tournaments}"
-               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-slate-800 hover:text-white"
-               th:classappend="${currentUri != null and currentUri.startsWith('/tournaments')} ? 'bg-indigo-600/20 text-indigo-400 font-semibold' : 'text-slate-300'">
-                <i data-lucide="trophy" class="w-5 h-5"></i>
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"
+               th:classappend="${currentUri != null and currentUri.startsWith('/tournaments')} ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'">
+                <span th:classappend="${currentUri != null and currentUri.startsWith('/tournaments')} ? 'text-indigo-600' : 'text-slate-400'">
+                    <i data-lucide="trophy" class="w-5 h-5"></i>
+                </span>
                 Tournois
             </a>
 
             <a th:href="@{/teams}"
-               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-slate-800 hover:text-white"
-               th:classappend="${currentUri != null and currentUri.startsWith('/teams')} ? 'bg-indigo-600/20 text-indigo-400 font-semibold' : 'text-slate-300'">
-                <i data-lucide="users" class="w-5 h-5"></i>
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"
+               th:classappend="${currentUri != null and currentUri.startsWith('/teams')} ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'">
+                <span th:classappend="${currentUri != null and currentUri.startsWith('/teams')} ? 'text-indigo-600' : 'text-slate-400'">
+                    <i data-lucide="users" class="w-5 h-5"></i>
+                </span>
                 Equipes
             </a>
         </nav>
 
         <!-- Profil & Deconnexion -->
-        <div class="p-3 border-t border-slate-800">
-            <div class="flex items-center gap-3 px-2 py-2">
-                <span class="w-9 h-9 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center shrink-0">
+        <div class="p-3 border-t border-slate-100">
+            <div class="flex items-center gap-3 px-2 py-2 rounded-lg">
+                <span class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
                     <i data-lucide="circle-user-round" class="w-5 h-5"></i>
                 </span>
                 <div class="min-w-0 flex-1">
-                    <p class="text-sm font-medium text-white truncate" sec:authentication="name">Utilisateur</p>
+                    <p class="text-sm font-semibold text-slate-900 truncate" sec:authentication="name">Utilisateur</p>
                     <p class="text-xs text-slate-400 truncate">Connecté</p>
                 </div>
             </div>
             <form th:action="@{/logout}" method="post" class="mt-1">
                 <button type="submit"
-                        class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-400 transition-all duration-200 hover:bg-slate-800 hover:text-red-400">
-                    <i data-lucide="log-out" class="w-5 h-5"></i>
+                        class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-500 transition-all duration-150 hover:bg-red-50 hover:text-red-600 group">
+                    <i data-lucide="log-out" class="w-4 h-4 group-hover:text-red-500"></i>
                     Deconnexion
                 </button>
             </form>
@@ -119,7 +127,7 @@
          x-transition:leave="transition-opacity ease-linear duration-200"
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
-         class="md:hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40"
+         class="md:hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40"
          @click="sidebarOpen = false"
          style="display: none;"
          aria-hidden="true"></div>
@@ -132,49 +140,50 @@
            x-transition:leave="transition ease-in duration-150 transform"
            x-transition:leave-start="translate-x-0"
            x-transition:leave-end="-translate-x-full"
-           class="md:hidden fixed inset-y-0 left-0 w-64 bg-slate-900 text-slate-300 z-50 flex flex-col shadow-2xl"
+           class="md:hidden fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-100 z-50 flex flex-col shadow-2xl"
            style="display: none;">
 
-        <div class="flex items-center justify-between h-16 px-4 border-b border-slate-800">
+        <div class="flex items-center justify-between h-16 px-4 border-b border-slate-100">
             <div class="flex items-center gap-3">
-                <span class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-sm">
+                <span class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-200">
                     <i data-lucide="trophy" class="w-5 h-5 text-white"></i>
                 </span>
-                <span class="text-lg font-bold text-white">Tournament<span class="text-indigo-400">App</span></span>
+                <span class="text-lg font-bold text-slate-900">Tournament<span class="text-indigo-600">App</span></span>
             </div>
             <button @click="sidebarOpen = false"
-                    class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all duration-200"
+                    class="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all duration-150"
                     aria-label="Fermer le menu">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
 
-        <nav class="flex-1 px-3 py-4 space-y-1">
+        <nav class="flex-1 px-3 py-5 space-y-0.5">
+            <p class="px-3 pb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Navigation</p>
             <a th:href="@{/dashboard}" @click="sidebarOpen = false"
-               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-slate-800 hover:text-white"
-               th:classappend="${currentUri == '/dashboard'} ? 'bg-indigo-600/20 text-indigo-400 font-semibold' : 'text-slate-300'">
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"
+               th:classappend="${currentUri == '/dashboard'} ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'">
                 <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
                 Tableau de bord
             </a>
             <a th:href="@{/tournaments}" @click="sidebarOpen = false"
-               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-slate-800 hover:text-white"
-               th:classappend="${currentUri != null and currentUri.startsWith('/tournaments')} ? 'bg-indigo-600/20 text-indigo-400 font-semibold' : 'text-slate-300'">
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"
+               th:classappend="${currentUri != null and currentUri.startsWith('/tournaments')} ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'">
                 <i data-lucide="trophy" class="w-5 h-5"></i>
                 Tournois
             </a>
             <a th:href="@{/teams}" @click="sidebarOpen = false"
-               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-slate-800 hover:text-white"
-               th:classappend="${currentUri != null and currentUri.startsWith('/teams')} ? 'bg-indigo-600/20 text-indigo-400 font-semibold' : 'text-slate-300'">
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"
+               th:classappend="${currentUri != null and currentUri.startsWith('/teams')} ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'">
                 <i data-lucide="users" class="w-5 h-5"></i>
                 Equipes
             </a>
         </nav>
 
-        <div class="p-3 border-t border-slate-800">
+        <div class="p-3 border-t border-slate-100">
             <form th:action="@{/logout}" method="post">
                 <button type="submit"
-                        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 transition-all duration-200 hover:bg-slate-800 hover:text-red-400">
-                    <i data-lucide="log-out" class="w-5 h-5"></i>
+                        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 transition-all duration-150 hover:bg-red-50 hover:text-red-600 group">
+                    <i data-lucide="log-out" class="w-4 h-4 group-hover:text-red-500"></i>
                     Deconnexion
                 </button>
             </form>
@@ -182,18 +191,18 @@
     </aside>
 
     <!-- ====== CONTENU PRINCIPAL ====== -->
-    <div class="flex-1 flex flex-col min-w-0">
+    <div class="flex-1 flex flex-col min-w-0 bg-slate-50">
 
         <!-- Barre superieure mobile -->
-        <header class="md:hidden sticky top-0 z-30 bg-white border-b border-slate-200 px-4 h-16 flex items-center justify-between shadow-xs">
+        <header class="md:hidden sticky top-0 z-30 bg-white border-b border-slate-100 px-4 h-16 flex items-center justify-between shadow-sm">
             <button @click="sidebarOpen = true"
-                    class="p-2 -ml-2 rounded-lg text-slate-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200"
+                    class="p-2 -ml-2 rounded-lg text-slate-600 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-150"
                     aria-label="Ouvrir le menu">
                 <i data-lucide="menu" class="w-6 h-6"></i>
             </button>
 
             <div class="flex items-center gap-2">
-                <span class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+                <span class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-200">
                     <i data-lucide="trophy" class="w-4 h-4"></i>
                 </span>
                 <span class="font-bold tracking-tight text-slate-900">Tournament<span class="text-indigo-600">App</span></span>
@@ -208,11 +217,11 @@
         </main>
 
         <!-- Pied de page -->
-        <footer class="border-t border-slate-200 bg-white">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
-                <span>TournamentApp &mdash; Plateforme de gestion de tournois</span>
-                <span class="inline-flex items-center gap-1.5 text-slate-400">
-                    <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+        <footer class="border-t border-slate-100 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
+                <span class="font-medium">TournamentApp &mdash; Plateforme de gestion de tournois</span>
+                <span class="inline-flex items-center gap-1.5">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-500"></i>
                     Session authentifiee
                 </span>
             </div>
