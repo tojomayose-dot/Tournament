@@ -35,7 +35,18 @@ Les fichiers à déployer sont générés dans `dist/tournament-frontend/browser
 - `src/styles.css` : styles globaux.
 - `public/` : fichiers statiques.
 
-Cette première étape crée uniquement le frontend. Les pages métier, les appels HTTP
-et l’authentification ne sont pas encore intégrés. L’application Angular peut démarrer
-sans le backend. Le backend Spring Boot et l’interface Thymeleaf restent disponibles
-comme auparavant ; aucun proxy API n’est encore configuré.
+## Connexion au backend
+
+Démarrer Spring Boot sur le port 8080 avec MySQL configuré, puis lancer `npm start`.
+Le proxy de développement transmet `/api/**` au backend. Se connecter sur
+http://localhost:4200/login avec un compte existant créé par l’administrateur.
+
+La connexion utilise une session serveur (cookie HttpOnly), sans stockage du mot de
+passe dans le navigateur. Le rôle est affiché sur la page d’accueil protégée et la
+session est restaurée au rechargement. Les mutations API nécessitent désormais un
+jeton CSRF : appeler `GET /api/auth/csrf`, puis transmettre `token` dans l’en-tête
+indiqué par `headerName`. Le service de connexion le fait pour login et logout.
+
+Les pages métier restent à intégrer. En production, servir le frontend et `/api`
+sous la même origine et configurer le serveur pour renvoyer `index.html` sur les
+routes Angular. Le proxy fourni s’applique uniquement au développement.

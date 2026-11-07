@@ -96,6 +96,15 @@
                 </span>
                 Equipes
             </a>
+
+            <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/users/new}"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"
+               th:classappend="${currentUri != null and currentUri.startsWith('/admin/users')} ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'">
+                <span th:classappend="${currentUri != null and currentUri.startsWith('/admin/users')} ? 'text-indigo-600' : 'text-slate-400'">
+                    <i data-lucide="user-round-plus" class="w-5 h-5"></i>
+                </span>
+                Utilisateurs
+            </a>
         </nav>
 
         <!-- Profil & Deconnexion -->
@@ -176,6 +185,12 @@
                th:classappend="${currentUri != null and currentUri.startsWith('/teams')} ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'">
                 <i data-lucide="users" class="w-5 h-5"></i>
                 Equipes
+            </a>
+            <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/users/new}" @click="sidebarOpen = false"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"
+               th:classappend="${currentUri != null and currentUri.startsWith('/admin/users')} ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'">
+                <i data-lucide="user-round-plus" class="w-5 h-5"></i>
+                Utilisateurs
             </a>
         </nav>
 
