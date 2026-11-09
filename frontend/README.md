@@ -47,6 +47,13 @@ session est restaurée au rechargement. Les mutations API nécessitent désormai
 jeton CSRF : appeler `GET /api/auth/csrf`, puis transmettre `token` dans l’en-tête
 indiqué par `headerName`. Le service de connexion le fait pour login et logout.
 
-Les pages métier restent à intégrer. En production, servir le frontend et `/api`
+La page protégée `/tournaments` affiche les tournois depuis `GET /api/tournaments`.
+Elle propose un filtre par nom exact du sport (insensible à la casse), un filtre
+par statut et une pagination de 10 tournois, triés par date de début décroissante.
+La navigation commune permet de revenir au tableau de bord ou de se déconnecter.
+Les états de chargement, de liste vide et d’erreur sont affichés ; une session
+expirée renvoie vers la connexion. La création et les détails restent à migrer.
+
+En production, servir le frontend et `/api`
 sous la même origine et configurer le serveur pour renvoyer `index.html` sur les
 routes Angular. Le proxy fourni s’applique uniquement au développement.

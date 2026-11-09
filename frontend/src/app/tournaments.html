@@ -1,0 +1,85 @@
+<header>
+  <span class="badge">COMPÉTITIONS</span>
+  <h1>Tournois</h1>
+  <p>Retrouvez vos compétitions et suivez leur progression.</p>
+</header>
+
+<form class="filters panel" (ngSubmit)="search()" aria-label="Filtrer les tournois">
+  <div>
+    <label for="sport">Sport</label>
+    <input id="sport" name="sport" [(ngModel)]="sport" placeholder="Ex. : Football">
+    <small>Nom exact du sport, sans distinction de majuscules.</small>
+  </div>
+  <div>
+    <label for="status">Statut</label>
+    <select id="status" name="status" [(ngModel)]="status">
+      <option value="">Tous les statuts</option>
+      @for (item of statuses; track item.value) {
+        <option [value]="item.value">{{ item.label }}</option>
+      }
+    </select>
+  </div>
+  <div class="filter-actions">
+    <button type="submit">Rechercher</button>
+    <button type="button" class="secondary" (click)="reset()">Réinitialiser</button>
+  </div>
+</form>
+
+<section class="panel results" aria-label="Liste des tournois" [attr.aria-busy]="loading()">
+  @if (loading()) {
+    <p class="state" role="status">Chargement des tournois…</p>
+  } @else if (error()) {
+    <div class="state">
+      <p class="error" role="alert">{{ error() }}</p>
+      <button class="retry" (click)="reload()">Réessayer</button>
+    </div>
+  } @else if (result(); as data) {
+    <div class="results-heading">
+      <h2>Liste des tournois</h2>
+      <span role="status">{{ data.totalElements }} résultat{{ data.totalElements > 1 ? 's' : '' }}</span>
+    </div>
+    @if (data.content.length === 0) {
+      <div class="state">
+        <h3>Aucun tournoi trouvé</h3>
+        <p>Aucun tournoi ne correspond à cette sélection. Vous pouvez réinitialiser les filtres.</p>
+      </div>
+    } @else {
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Tableau des tournois">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Tournoi</th>
+              <th scope="col">Dates</th>
+              <th scope="col">Lieu</th>
+              <th scope="col">Format</th>
+              <th scope="col">Équipes max.</th>
+              <th scope="col">Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (tournament of data.content; track tournament.id) {
+              <tr>
+                <td><strong>{{ tournament.name }}</strong><span class="sport">{{ tournament.sport }}</span></td>
+                <td class="dates">
+                  <span>{{ tournament.startDate ? (tournament.startDate | date:'dd/MM/yyyy') : 'À définir' }}</span>
+                  <span class="muted">au {{ tournament.endDate ? (tournament.endDate | date:'dd/MM/yyyy') : 'À définir' }}</span>
+                </td>
+                <td>{{ tournament.location || 'À définir' }}</td>
+                <td>{{ tournament.type === 'CHAMPIONNAT' ? 'Championnat' : 'Élimination directe' }}</td>
+                <td>{{ tournament.maxTeams }}</td>
+                <td><span class="status" [attr.data-status]="tournament.status">{{ statusLabel(tournament.status) }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+    @if (data.totalPages > 1) {
+      <nav class="pagination" aria-label="Pagination des tournois">
+        <button class="secondary" [disabled]="data.number === 0" (click)="goToPage(data.number - 1)">Précédent</button>
+        <span>Page {{ data.number + 1 }} sur {{ data.totalPages }}</span>
+        <button class="secondary" [disabled]="data.number + 1 >= data.totalPages" (click)="goToPage(data.number + 1)">Suivant</button>
+      </nav>
+    }
+  }
+</section>
