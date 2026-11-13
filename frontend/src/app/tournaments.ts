@@ -47,7 +47,9 @@ export class Tournaments {
           catchError((error: unknown) => {
             if (error instanceof HttpErrorResponse && error.status === 401) {
               this.auth.user.set(null);
-              void this.router.navigateByUrl('/login');
+              void this.router.navigate(['/login'], {
+                queryParams: { returnUrl: this.router.url, reason: 'session-expired' },
+              });
             } else {
               this.error.set('Impossible de charger les tournois. Réessayez dans un instant.');
             }

@@ -10,6 +10,9 @@ import { AuthService } from './auth.service';
     <span class="badge">TournamentApp</span>
     <h1>Connexion</h1>
     <p>Connectez-vous pour gérer vos tournois.</p>
+    @if (sessionExpired) {
+      <p role="status">Votre session a expiré. Reconnectez-vous pour reprendre votre navigation.</p>
+    }
     <form (ngSubmit)="submit()" #form="ngForm">
       <label for="username">Nom d’utilisateur</label>
       <input id="username" name="username" [(ngModel)]="username" autocomplete="username" required [disabled]="busy()">
@@ -32,6 +35,7 @@ export class Login {
   private auth = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  readonly sessionExpired = this.route.snapshot.queryParamMap.get('reason') === 'session-expired';
   username = '';
   password = '';
   showPassword = signal(false);
