@@ -2,6 +2,7 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router, Routes } from '@angular/router';
 import { AuthService } from './auth.service';
 import { Login } from './login';
+import { NotFound } from './not-found';
 import { Dashboard } from './dashboard';
 import { Shell } from './shell';
 import { Tournaments } from './tournaments';
@@ -22,5 +23,5 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },
-  { path: '**', redirectTo: 'dashboard' }
+  { path: '**', component: NotFound }
 ];
