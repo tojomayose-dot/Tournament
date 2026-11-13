@@ -3,8 +3,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { catchError, of, startWith, Subject, switchMap } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
+import { catchError, combineLatest, of, startWith, Subject, switchMap } from 'rxjs';
 import { AuthService } from './auth.service';
 import { TournamentPage, TournamentService, TournamentStatus, tournamentStatuses } from './tournament.service';
 
@@ -17,6 +17,7 @@ export class Tournaments {
   private readonly tournaments = inject(TournamentService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly requests = new Subject<void>();
   readonly statuses = tournamentStatuses;
   readonly result = signal<TournamentPage | null>(null);
@@ -29,9 +30,16 @@ export class Tournaments {
   private page = 0;
 
   constructor() {
-    this.requests.pipe(
-      startWith(undefined),
-      switchMap(() => {
+    combineLatest([this.route.queryParamMap, this.requests.pipe(startWith(undefined))]).pipe(
+      switchMap(([params]) => {
+        this.sport = params.get('sport')?.trim() ?? '';
+        const status = params.get('status');
+        this.status = this.statuses.find(item => item.value === status)?.value ?? '';
+        const rawPage = params.get('page') ?? '0';
+        const page = Number(rawPage);
+        this.page = /^\d+$/.test(rawPage) && Number.isSafeInteger(page) ? page : 0;
+        this.appliedSport = this.sport;
+        this.appliedStatus = this.status;
         this.loading.set(true);
         this.error.set('');
         this.result.set(null);
@@ -58,7 +66,7 @@ export class Tournaments {
     this.appliedSport = this.sport.trim();
     this.appliedStatus = this.status;
     this.page = 0;
-    this.reload();
+    this.navigate();
   }
 
   reset() {
@@ -73,7 +81,19 @@ export class Tournaments {
     const result = this.result();
     if (this.loading() || !result || page < 0 || page >= result.totalPages) return;
     this.page = page;
-    this.reload();
+    this.navigate();
+  }
+
+  private navigate() {
+    const queryParams = {
+      sport: this.appliedSport || null,
+      status: this.appliedStatus || null,
+      page: this.page || null,
+    };
+    // A repeated search refreshes results even when the URL stays the same.
+    const target = this.router.createUrlTree([], { relativeTo: this.route, queryParams });
+    if (this.router.serializeUrl(target) === this.router.url) this.reload();
+    else void this.router.navigateByUrl(target);
   }
 
   statusLabel(status: TournamentStatus) {
