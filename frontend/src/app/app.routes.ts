@@ -6,11 +6,11 @@ import { Dashboard } from './dashboard';
 import { Shell } from './shell';
 import { Tournaments } from './tournaments';
 
-const authenticated: CanActivateFn = async () => {
+const authenticated: CanActivateFn = async (_route, state) => {
   const auth = inject(AuthService);
   const router = inject(Router);
   try { await auth.restore(); return true; }
-  catch { return router.createUrlTree(['/login']); }
+  catch { return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } }); }
 };
 export const routes: Routes = [
   { path: 'login', component: Login },

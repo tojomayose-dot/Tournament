@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from './auth.service';
 
@@ -31,6 +31,7 @@ import { AuthService } from './auth.service';
 export class Login {
   private auth = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   username = '';
   password = '';
   showPassword = signal(false);
@@ -44,7 +45,10 @@ export class Login {
       await this.auth.login(this.username, this.password);
       this.password = '';
       this.showPassword.set(false);
-      await this.router.navigateByUrl('/dashboard');
+      const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+      const destination = returnUrl && /^\/(dashboard|tournaments)(?:[/?#]|$)/.test(returnUrl)
+        ? returnUrl : '/dashboard';
+      await this.router.navigateByUrl(destination);
     } catch (error) {
       this.error.set(error instanceof HttpErrorResponse && error.status === 401
         ? 'Identifiants incorrects ou compte désactivé.'
