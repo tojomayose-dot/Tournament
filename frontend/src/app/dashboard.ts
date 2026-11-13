@@ -7,7 +7,7 @@ import { AuthService } from './auth.service';
   template: `<section>
     <span class="badge">TournamentApp</span>
     <h1>Bienvenue, {{ auth.user()?.username }}</h1>
-    <p>Rôle : {{ auth.user()?.role }}</p>
+    <p>Rôle : {{ auth.roleLabel() }}</p>
     <p>Consultez les compétitions, filtrez-les par sport et suivez leur statut.</p>
     <a routerLink="/tournaments" class="button-link">Voir les tournois</a>
   </section>`

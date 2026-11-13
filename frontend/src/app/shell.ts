@@ -15,7 +15,7 @@ import { AuthService } from './auth.service';
         </nav>
         <div class="account">
           <strong>{{ auth.user()?.username }}</strong>
-          <span>{{ auth.user()?.role }}</span>
+          <span>{{ auth.roleLabel() }}</span>
           <button class="secondary" (click)="logout()" [disabled]="busy()">
             {{ busy() ? 'Déconnexion…' : 'Se déconnecter' }}
           </button>

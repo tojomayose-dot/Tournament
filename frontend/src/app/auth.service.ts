@@ -1,4 +1,4 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
@@ -7,6 +7,15 @@ export interface User { id: number; username: string; role: 'ADMIN' | 'MANAGER' 
 export class AuthService {
   private http = inject(HttpClient);
   readonly user = signal<User | null>(null);
+  readonly roleLabel = computed(() => {
+    const role = this.user()?.role;
+    return role ? {
+      ADMIN: 'Administrateur',
+      MANAGER: 'Gestionnaire',
+      OPERATOR: 'Opérateur',
+      USER: 'Utilisateur',
+    }[role] : '';
+  });
   async restore(): Promise<boolean> {
     try {
       this.user.set(await firstValueFrom(this.http.get<User>('/api/auth/me')));
